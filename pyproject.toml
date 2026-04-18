@@ -7,4 +7,9 @@
 [tool.setuptools_scm]
     write_to = 'numjuggler/version.py'
 
+[dependency-groups]
+test = [
+    "pytest>=9.0.3",
+]
+
 
