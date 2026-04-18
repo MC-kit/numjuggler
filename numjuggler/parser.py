@@ -12,7 +12,7 @@ import six
 import os
 from chardet import UniversalDetector
 from io import StringIO
-from numjuggler import PartialFormatter
+from numjuggler.utils import PartialFormatter
 
 try:
     # This clause define the fallback for cPickle, which is an accelerated
