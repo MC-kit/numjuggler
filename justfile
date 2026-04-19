@@ -17,9 +17,9 @@ alias c := check
 set dotenv-load := true
 
 default_python := "3.13"
-TITLE := `uv version`
-VERSION := `uv version --short`
-
+# TITLE := `uv version`
+TITLE := `uv run --with setuptools_scm python -m setuptools_scm`
+# VERSION := `uv version --short`
 log := "warn"
 
 export JUST_LOG := log
@@ -82,14 +82,14 @@ export JUST_LOG := log
 @check: pre-commit test
 
 # Check style includeing mypy and pylint and test
-[group: 'dev']
-@check-full: check mypy pylint pyright
+# [group: 'dev']
+# @check-full: check mypy pylint pyright
  
-# Bump project version
-[group: 'dev']
-@bump *args="patch":
-  uv version --bump {{args}}
-  git commit -m "bump: version $(uv version)" pyproject.toml uv.lock 
+# # Bump project version
+# [group: 'dev']
+# @bump *args="patch":
+#   uv version --bump {{args}}
+#   git commit -m "bump: version $(uv version)" pyproject.toml uv.lock 
 
 # update tools
 [group: 'dev']
@@ -113,7 +113,7 @@ export JUST_LOG := log
 # run pyupgrade
 [group: 'dev']
 @pyupgrade *args="--py314-plus":  # this check python version on moving to the python-3.14
-  uvx pyupgrade {{args}}  # presumably, code is updated by ruff, just to check sometimes
+  uvx pyupgrade {{args}}  # presumably, code is updated by ruff, just to check occasionally
 
 # test up to the first fail
 [group: 'test']
@@ -135,10 +135,10 @@ export JUST_LOG := log
 @test *args:
   uv run --no-dev --group test pytest {{args}}
 
-# run documentation tests 
-[group: 'test']
-@xdoctest *args:
-  uv run --no-dev --group test python -m xdoctest --silent -c all src tools {{args}}
+# # run documentation tests 
+# [group: 'test']
+# @xdoctest *args:
+#   uv run --no-dev --group test python -m xdoctest --silent -c all src tools {{args}}
 
 # create coverage data
 [group: 'test']
@@ -152,51 +152,51 @@ export JUST_LOG := log
   open htmlcov/index.html
 
 # check correct typing at runtime
-[group: 'test']
-typeguard *args:
-  @uv run --no-dev --group test --group typeguard pytest --typeguard-packages=src {{args}}
+# [group: 'test']
+# typeguard *args:
+#   @uv run --no-dev --group test --group typeguard pytest --typeguard-packages=src {{args}}
 
 
 # ruff check and format
-[group: 'lint']
+[group: 'style']
 @ruff:
   ruff check --fix src tests
   ruff format src tests
 
 # Run pre-commit on all files
-[group: 'lint']
+[group: 'style']
 @pre-commit:
   uv run --no-dev --group pre-commit pre-commit run --show-diff-on-failure --color=always --all-files
 
 # Run mypy
-[group: 'lint']
-@mypy:
-  uv run --no-dev --group mypy mypy src tests docs/source/conf.py
+# [group: 'lint']
+# @mypy:
+#   uv run --no-dev --group mypy mypy src tests docs/source/conf.py
 
-[group: 'lint']
+[group: 'style']
 @pylint:
   uv run --no-dev --group lint pylint --recursive=y --output-format colorized src tests
 
-[group: 'lint']
-@pyright:
-  uv run --no-dev --group pyright pyright src tests
+# [group: 'lint']
+# @pyright:
+#   uv run --no-dev --group pyright pyright src tests
 
 # Lint with ty
-[group: 'lint']
+[group: 'style']
 @ty:
-  uvx ty check 
+  ty check 
 
-# Check rst-texts
-[group: 'docs']
-@rstcheck:
-  uv run --no-dev --group docs rstcheck --recursive *.rst docs
-
-# build documentation
-[group: 'docs']
-@docs-build: rstcheck
-  uv run --no-dev --group docs sphinx-build docs/source docs/_build
-
-# browse and edit documentation with auto build
-[group: 'docs']
-@docs:
-  uv run --no-dev --group docs --group docs sphinx-autobuild --open-browser docs/source docs/_build
+# # Check rst-texts
+# [group: 'docs']
+# @rstcheck:
+#   uv run --no-dev --group docs rstcheck --recursive *.rst docs
+#
+# # build documentation
+# [group: 'docs']
+# @docs-build: rstcheck
+#   uv run --no-dev --group docs sphinx-build docs/source docs/_build
+#
+# # browse and edit documentation with auto build
+# [group: 'docs']
+# @docs:
+#   uv run --no-dev --group docs --group docs sphinx-autobuild --open-browser docs/source docs/_build

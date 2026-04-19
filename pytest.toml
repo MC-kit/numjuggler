@@ -34,7 +34,7 @@ doctest_optionflags = [
   "ALLOW_BYTES",
   "NUMBER",
 ]
-testpaths = ["tests", "numjuggler", "docs"]
+testpaths = ["tests", "src", "docs"]
 markers = ["slow: marks tests as slow (deselect with '-m \"not slow\"')"]
 filterwarnings = [
     "error",

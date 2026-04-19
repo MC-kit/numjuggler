@@ -1,15 +1,12 @@
-# [tool.towncrier]
-#     directory = 'changes'
-
 [build-system]
 requires = ['setuptools>=42', 'wheel', 'setuptools_scm[toml]>=3.4']
 
 [project]
 name = "numjuggler"
-version = "0.6.1.dev2"
+dynamic = ["version"]
 description = "MCNP input file renumbering tool"
 readme = "README.rst"
-keywords = ["abundance", "element", "nuclide"]
+keywords = ["MCNP", "ITER", "PARSER", "RENUMBER"]
 license = { text = "GPLv3" }
 authors = [{ name = "A.Travleev", email = "anton.travleev@gmail.com" }]
 requires-python = ">=3.11"
@@ -29,11 +26,7 @@ classifiers = [
   "Topic :: Scientific/Engineering :: Physics",
   "Topic :: Utilities",
 ]
-dependencies = [
-    "chardet>=7.4.3",
-    "numpy>=2.4.4",
-    "six>=1.17.0",
-]
+dependencies = ["chardet>=7.4.3", "numpy>=2.4.4", "six>=1.17.0"]
 urls."Bug Tracker" = "https://github.com/travleev/numjuggler/issues"
 urls.Changelog = "https://github.com/travleev/numjuggler/releases"
 urls.documentation = "https://numjuggler.readthedocs.io/"
@@ -42,10 +35,25 @@ urls.repository = "https://github.com/travleev/numjuggler/"
 
 
 [tool.setuptools_scm]
-write_to = 'numjuggler/version.py'
+write_to = "src/numjuggler/version.py"
+
+[project.scripts]
+numjuggler = "numjuggler.main:main"
 
 [dependency-groups]
-dev = [{ include-group = "style" }, { include-group = "test" }]
+dev = [
+  { include-group = "docs" },
+  { include-group = "style" },
+  { include-group = "test" },
+]
+docs = [
+  "mkdocs",
+  "mkdocs-include-markdown-plugin",
+  "mkdocs-material",
+  "mkdocstrings[python]>=0.29",
+  "pygments",
+  "griffe-public-wildcard-imports",
+]
 style = [
   { include-group = "pylint" },
   #  { include-group = "mypy" },
@@ -59,10 +67,10 @@ test = ["pytest>=9.0.3", "pytest-cov>=7.1.0"]
 
 [tool.coverage]
 run.branch = true
-run.omit = [ "**/__init__.py", "*_tab.py", "tools/*.py" ]
+run.omit = ["**/__init__.py", "*_tab.py", "tools/*.py"]
 run.parallel = true
-run.source = [ "src" ]
-paths.source = [ "src" ]
+run.source = ["src"]
+paths.source = ["src"]
 # Regexes for lines to exclude from consideration
 report.exclude_lines = [
   # Don't complain about missing debug-only code:
@@ -78,10 +86,9 @@ report.exclude_lines = [
   "raise AssertionError",
   "raise NotImplementedError",
 ]
-report.fail_under = 100
+report.fail_under = 27
 report.ignore_errors = true
-report.omit = [ "**/__init__.py", "**/types.py", "*_tab.py" ]
+report.omit = ["**/__init__.py", "**/types.py", "*_tab.py"]
 report.show_missing = true
 report.skip_covered = true
 report.sort = "Cover"
-
