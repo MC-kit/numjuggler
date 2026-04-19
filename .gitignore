@@ -30,6 +30,9 @@ htmlcov/
 travis_tests/*.diff
 travis_tests/*.res
 
+# docs
+docs/site
+
 # vs code
 settings.json
 
