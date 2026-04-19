@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from pathlib import Path
+import shutil
 
 import pytest
 import six
-from numjuggler.utils.io import cd_temporarily
 from numjuggler.main import main
 
 HERE = Path(__file__).parent
@@ -38,15 +38,21 @@ def load_line_heading_numbers(lines):
             "-c 20 -s 10",
             "21 22 23 24 25 26 27 11 12 13 14 15 16 17 30 31 32 33 34 35 40 41 42 43 44 45",
         ),
+        pytest.param(
+            "simple_cubes_with_multiline_tr.mcnp",
+            "-c 20 -s 10",
+            "21 22 23 24 25 26 27 11 12 13 14 15 16 17 30 31 32 33 34 35 40 41 42 43 44 45",
+            marks=pytest.mark.xfail(reason="Failed on multiline TR specification"),
+        ),
     ],
 )
-def test_test_main(tmpdir, capsys, inp, command, expected):
+def test_rename(cd_tmpdir, capsys, inp, command, expected):
     source = test_data_path / inp
+    wrk_file = shutil.copy(source, cd_tmpdir)
     command = command.split()
-    command.append(str(source.absolute()))
-    with cd_temporarily(tmpdir):
-        main(command)
-    out, err = capsys.readouterr()
+    command.append(str(wrk_file))
+    main(command)
+    out, _ = capsys.readouterr()
     actual_numbers = load_line_heading_numbers(out.split("\n"))
     expected_numbers = list(f for f in map(int, expected.split()))
     assert expected_numbers == actual_numbers, "Output of numjuggler is wrong"

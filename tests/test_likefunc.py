@@ -36,8 +36,8 @@ def test_LikeFunction(
     expected_absent_value,
     expected_text
 ):
-    input = StringIO(data)
-    maps = lf.read_map_file(input, log)
+    inp = StringIO(data)
+    maps = lf.read_map_file(inp, log)
     actual = StringIO()
     for k in maps:
         like_function = maps[k]
