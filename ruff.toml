@@ -1,4 +1,4 @@
-target-version = "py312"
+target-version = "py313"
 line-length = 100
 src = ["src", "tests"]
 exclude = [
@@ -35,33 +35,50 @@ exclude = [
 
 [lint]
 select = ["ALL"]
-ignore = [
+ignore = [ # TODO @dvp2015: TD is rather high, fix
   "ANN",
   "ARG",
+  "B",
+  "BLE",
+  "C",
   "C901",
   "COM812",
   "D",
   "D203",
   "D211",
   "D213",
+  "E",
   "EM",
   "E741",
   "ERA",
+  "EXE",
+  "F",
   "FBT",
   "FIX",
-  # "FRA",
+  "FURB",
+  "I",
+  "ICN",
   "Q",
+  "N",
+  "PERF",
+  "PLC",
   "PLR",
   "PLW",
+  "PT",
+  "PTH",
+  "RET",
+  "RUF",
+  "S",
+  "SIM",
+  "SLF",
   "T201",
   "TD",
   "TRY",
+  "UP",
 ]
 
 [lint.per-file-ignores]
-"benchmarks/*" = ["S101"]
 "tests/*" = ["ANN", "D100", "D101", "D102", "D103", "D104", "PLR2004", "S101"]
-"tools/*" = ["T201", "INP001", "S603", "S607"]
 
 [lint.mccabe]
 # Unlike Flake8, default to a complexity level of 10.
