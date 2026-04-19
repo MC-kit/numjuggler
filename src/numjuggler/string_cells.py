@@ -1,7 +1,8 @@
-import re
-from numjuggler import numbering as mn
-from numjuggler import parser as mp
+from __future__ import annotations
 
+import re
+
+from numjuggler import parser as mp
 
 #########################################
 # define patterns to be found in string #
@@ -9,11 +10,11 @@ from numjuggler import parser as mp
 
 
 # used in card_split
-celmat=re.compile(r"(?P<cel>^ *\d+) +(?P<scnd>(\d+|like))",re.I)      # identify first two entries on cell card (cell name, material)
-grlnumber=re.compile(r"[-+]?(\d+\.\d+|\.\d+|\d+\.?)(e[+-]\d+)?",re.I) # identify a general number form signed integer, float or exponential
-param=re.compile(r"((^|\n {5})[\(\):\-\+\d+\.\# ]*)([\*a-z])",re.I)   # identity begining of the paramter part of the cell card
-likebut=re.compile(r"but",re.I)                                       # identify likebut  card
-trans=re.compile(r"trcl|fill= *\d+[ c\$\n]*\(,",re.I)                 # identify tranformed card
+celmat=re.compile(r"(?P<cel>^ *\d+) +(?P<scnd>(\d+|like))",re.IGNORECASE)      # identify first two entries on cell card (cell name, material)
+grlnumber=re.compile(r"[-+]?(\d+\.\d+|\.\d+|\d+\.?)(e[+-]\d+)?",re.IGNORECASE) # identify a general number form signed integer, float or exponential
+param=re.compile(r"((^|\n {5})[\(\):\-\+\d+\.\# ]*)([\*a-z])",re.IGNORECASE)   # identity begining of the paramter part of the cell card
+likebut=re.compile(r"but",re.IGNORECASE)                                       # identify likebut  card
+trans=re.compile(r"trcl|fill= *\d+[ c\$\n]*\(,",re.IGNORECASE)                 # identify tranformed card
 
 # user in get_stat function
 reword=re.compile(r"(\d+|\(|\)|:|\#)")                    # word identification in cell line
@@ -22,8 +23,8 @@ compcell=re.compile(r"\#\d")                              # identify hashcell co
 # used in Complementary operator function
 number=re.compile(r"(?P<number>[-+]?\d+)")                                     # signed (+-) (or not) numbers
 # leftp=re.compile(r"^ *(?P<left>[-\d\(\#])",re.M)                               # identify first valid character
-leftp=re.compile(r"(?P<left>[-+\d\(\#])",re.I)                                  # identify first valid character
-rightp=re.compile(r"(?P<right>[ c\$\n]*$)",re.I)                               # identify last valid character
+leftp=re.compile(r"(?P<left>[-+\d\(\#])",re.IGNORECASE)                                  # identify first valid character
+rightp=re.compile(r"(?P<right>[ c\$\n]*$)",re.IGNORECASE)                               # identify last valid character
 #interblk=re.compile(r"(?P<previous>\d)(?P<next>(( +| *(\$)?\n(C\n)* *)[-+]?\d))") # two numbers separated by blank (or newline or comments)
 #intercls=re.compile(r"(?P<previous>\))(?P<next>(( *| *(\$)?\n(C\n)* *)[-+]?\d))") # closed parenthesis followed by number
 #interopn=re.compile(r"(?P<previous>\d)(?P<next>(( *| *(\$)?\n(C\n)* *)\())")   # number followed by opened parenthesis
@@ -37,18 +38,18 @@ colonamp=re.compile(r"[:&]")                                                   #
 # used for remove redundant parenthesis function
 mostinner=re.compile(r"\([^\(^\)]*\)")                                      # identify most inner parentheses
 bracketsemi=re.compile(r"[\]\[;]")                                          # square bracket or semicolon
-blnkline=re.compile(r"^ *\n",re.M)                                          # identify blank line
-contline=re.compile(r"\n {0,4}(?P<start>[^c^ ])",re.I)                      # identify character other than 'C' in fisrt 5 columns
+blnkline=re.compile(r"^ *\n",re.MULTILINE)                                          # identify blank line
+contline=re.compile(r"\n {0,4}(?P<start>[^c^ ])",re.IGNORECASE)                      # identify character other than 'C' in fisrt 5 columns
 comdollar=re.compile(r"\n(?P<blnk> *)\$")                                   # identify dollar on 'blank line'
 startgeom=re.compile(r"(?P<previous>^ *)(?P<start>[\-\+\d])")               # identify beginning of the geomtric part
-endgeom=re.compile(r"(?P<last>\d)(?P<next> *((\n *)?\$|\nc)?(\n *)?$)",re.I)    # identify end of the geomtric part
+endgeom=re.compile(r"(?P<last>\d)(?P<next> *((\n *)?\$|\nc)?(\n *)?$)",re.IGNORECASE)    # identify end of the geomtric part
 #endgeom=re.compile(r"(?P<last>\d)(?P<next> *(\$|\nc)?(\n *)?$)",re.I)                      # identify end of the geomtric part
 
 # other
 rehash=re.compile(r"# *(\d+|\()")                                             # find beginning of complementary operator (both cell and surf)
 parent=re.compile(r"[\(|\)]")                                               # position of open and close parenthesis (get_hashcell)
-gline=re.compile(r"(^ ?[\(\):\-\+\d+\.\# ]+|\n {5}[\(\):\-\+\d+\.\# ]+)",re.I)  # valid geometric part of the line       (remove/restore_comments)
-comments=re.compile(r"((\n *)?\$|\n *c)",re.I)                               # begining of comment part               (remove/restore_comments)
+gline=re.compile(r"(^ ?[\(\):\-\+\d+\.\# ]+|\n {5}[\(\):\-\+\d+\.\# ]+)",re.IGNORECASE)  # valid geometric part of the line       (remove/restore_comments)
+comments=re.compile(r"((\n *)?\$|\n *c)",re.IGNORECASE)                               # begining of comment part               (remove/restore_comments)
 #comments=re.compile(r"\$|\n *c",re.I)                               # begining of comment part               (remove/restore_comments)
 
 
@@ -95,8 +96,7 @@ def redundant(m,geom):
 
    if leftOK and rightOK :
        return True
-   else:
-       return False
+   return False
 
 # function used in Regular expresion sub function
 # function user in complementary function
@@ -107,8 +107,7 @@ def chgsign(m):
       return num[1:]
     if num[0] == '+':
       return '-'+num[1:]
-    else:
-      return '-'+num
+    return '-'+num
 
 # function used in Regular expersion sub function
 # function user in complementary function
@@ -117,8 +116,7 @@ def chgsign(m):
 def repl_inter_union(m):
     if m.group(0) == ':' :
        return ')('
-    else :
-       return ':'
+    return ':'
 
 # function used in Regular expersion sub function
 # function user in remove_redundant function
@@ -127,10 +125,9 @@ def reverse_repl(m):
     symb=m.group(0)
     if symb == '[' :
       return '('
-    elif symb == ']' :
+    if symb == ']' :
       return ')'
-    else :
-      return ':'
+    return ':'
 ############################################################
 
 def complementary(ccell) :
@@ -169,7 +166,7 @@ def complementary(ccell) :
     return ccell.str
 
 ############################################################
-class cline():
+class cline:
    def __init__(self,line):
      self.str=line
 
@@ -192,7 +189,6 @@ kept in the line"""
             celltab[i] = c.group()
 
       self.str=''.join(celltab)
-      return
 
    def restore_comments(self):
       """ Restore the text of the comment."""
@@ -212,7 +208,6 @@ kept in the line"""
              j += 1
 
       self.str = ''.join(celltab)
-      return
 
 
    def remove_redundant(self,remove_com=True,remopt='nochg'):
@@ -292,7 +287,7 @@ kept in the line"""
       rp=self.str.count(')')
       return (lp,rp)
 ############################################################
-class cell_card_string():
+class cell_card_string:
 
    def __init__(self,card):
       self.stat={ 'word'     : None  ,\
@@ -301,7 +296,6 @@ class cell_card_string():
                   'hash'     : None   }
 
       self.__card_split__(card)
-      return
 
    def __card_split__(self,cardin):
       """ Split the card string in three parts :
@@ -359,7 +353,6 @@ class cell_card_string():
             self.geom = cline(cellcard.str)
             self.parm = cline('')
 
-      return
 
    def get_stat(self,remove_com=True):
       """ Count and return the number of words and hashes on the line."""
@@ -475,7 +468,7 @@ def remove_hash(cards,logfile=''):
        logtab.sort
        flog = open(logfile,'w')
        for cell in logtab:
-          flog.write(' Cell {:>9} :\n'.format(cell[0]))
+          flog.write(f' Cell {cell[0]:>9} :\n')
           cc = False
           for h in cell[1]:
              if (h[0] == 'surf'):
@@ -485,7 +478,7 @@ def remove_hash(cards,logfile=''):
           if cc:
              for i,h in enumerate(cell[1]):
                 if (h[0] == 'surf'):
-                    flog.write(' {:>2}:   {}\n'.format(i+1,h[1]) )
+                    flog.write(f' {i+1:>2}:   {h[1]}\n' )
           cc = False
           for h in cell[1]:
              if (h[0] == 'cell'):
@@ -495,7 +488,7 @@ def remove_hash(cards,logfile=''):
           if cc:
              for i,h in enumerate(cell[1]):
                 if (h[0] == 'cell'):
-                    flog.write(' {:>2}:  {:>9}\n'.format(i+1,h[1]) )
+                    flog.write(f' {i+1:>2}:  {h[1]:>9}\n' )
           flog.write('\n---------------------------------------------------\n')
        flog.close()
 

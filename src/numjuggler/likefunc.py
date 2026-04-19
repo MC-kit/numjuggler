@@ -4,8 +4,8 @@
 New implementation of mapping, where one can specify
 different functions for different ranges and separate values.
 """
+from __future__ import annotations
 
-from __future__ import print_function
 from collections import OrderedDict
 
 from numjuggler.utils.io import resolve_fname_or_stream
@@ -25,18 +25,18 @@ def const_func(c):
     """
     def f(x):
         return c
-    f._mydoc = '{}'.format(c)
+    f._mydoc = f'{c}'
     return f
 
 
 def add_func(c):
     def f(x):
         return x + c
-    f._mydoc = 'x + {}'.format(c)
+    f._mydoc = f'x + {c}'
     return f
 
 
-class LikeFunctionBase(object):
+class LikeFunctionBase:
     """
     Base class for other like-function classes.
 
@@ -67,7 +67,6 @@ class LikeFunctionBase(object):
 
         # String printed at begin str(self)
         self.doc = ""
-        return
 
     def __call__(self, x):
         res = self.get_value(x)
@@ -89,7 +88,7 @@ class LikeFunctionBase(object):
 
         res.extend(self._str())
 
-        res.append('other -> {}'.format(self.default._mydoc))
+        res.append(f'other -> {self.default._mydoc}')
         return '\n'.join(res)
 
     def write_log_as_map(self, t, fname_or_stream=None):
@@ -97,7 +96,7 @@ class LikeFunctionBase(object):
             raise ValueError("Cannon write log for unlogged mapping.")
         with resolve_fname_or_stream(fname_or_stream, "w") as fout:
             for nold, nnew in self.ld.items():
-                print('{} {}: {}'.format(t, nnew, nold), file=fout)
+                print(f'{t} {nnew}: {nold}', file=fout)
 
 
 class LikeFunction(LikeFunctionBase):
@@ -108,12 +107,11 @@ class LikeFunction(LikeFunctionBase):
     form `range -> function`.
     """
     def __init__(self, log=False):
-        super(LikeFunction, self).__init__(log)
+        super().__init__(log)
 
         # OrderedDict of range -> function
         self.mappings = OrderedDict()
 
-        return
 
     def get_value(self, x):
         for rng, f in reversed(self.mappings.items()):
@@ -124,7 +122,7 @@ class LikeFunction(LikeFunctionBase):
     def _str(self):
         res = []
         for r, f in self.mappings.items():
-            res.append('{} -> {}'.format(r, f._mydoc))
+            res.append(f'{r} -> {f._mydoc}')
         return res
 
 
@@ -135,7 +133,7 @@ class LikeIndexFunction(LikeFunctionBase):
     List to be indexed is in self.vals.
     """
     def __init__(self, log=False, i0=1, skip=[], vals=[]):
-        super(LikeIndexFunction, self).__init__(log)
+        super().__init__(log)
 
         # List of values to index:
         self.vals = vals
@@ -147,7 +145,6 @@ class LikeIndexFunction(LikeFunctionBase):
         self.skip = skip
 
         self.get_value = self.get_valueI
-        return
 
     def unique(self):
         """
@@ -173,13 +170,11 @@ class LikeIndexFunction(LikeFunctionBase):
                 d[x] = i + self.i0
         self.d = d
         self.get_value = self.get_valueD
-        return
 
     def get_valueI(self, x):
         if x not in self.skip:  # and x in self.vals:
             return self.vals.index(x) + self.i0
-        else:
-            return self.default(x)
+        return self.default(x)
 
     def get_valueD(self, x):
         return self.d[x]
@@ -187,11 +182,11 @@ class LikeIndexFunction(LikeFunctionBase):
     def _str(self):
         res = []
         for x in self.vals:
-            res.append('{} -> {}'.format(x, self.get_value(x)))
+            res.append(f'{x} -> {self.get_value(x)}')
         return res
 
 
-class Range(object):
+class Range:
     """
     Represents a range or a point. Should be considered as immutable.
     """
@@ -203,19 +198,16 @@ class Range(object):
             x1, x2 = sorted((x1, x2))
             self.__x1 = x1
             self.__x2 = x2
-        return
 
     def __contains__(self, value):
         if self.__x2 is None:
             return value == self.__x1
-        else:
-            return (self.__x1 <= value <= self.__x2)
+        return (self.__x1 <= value <= self.__x2)
 
     def __str__(self):
         if self.__x2 is None:
             return str(self.__x1)
-        else:
-            return '[{} -- {}]'.format(self.__x1, self.__x2)
+        return f'[{self.__x1} -- {self.__x2}]'
 
     def __hash__(self):
         return hash((self.__x1, self.__x2))
@@ -247,7 +239,7 @@ def read_map_file(fname, log=False):
                 continue
             if t not in maps:
                 m = LikeFunction(log=log)
-                m.doc = 'Mappping for `{}` from `{}`'.format(t, fname)
+                m.doc = f'Mappping for `{t}` from `{fname}`'
                 maps[t] = m
             m = maps[t]
             for r in ranges:
@@ -300,15 +292,14 @@ def _get_map_ranges(s):
     for t in tl:
         if t == '--':
             is_range = True
+        elif is_range:
+            yield Range(v1, x2=int(t))
+            v1 = None
+            is_range = False
         else:
-            if is_range:
-                yield Range(v1, x2=int(t))
-                v1 = None
-                is_range = False
-            else:
-                if v1 is not None:
-                    yield Range(v1)
-                v1 = int(t)
+            if v1 is not None:
+                yield Range(v1)
+            v1 = int(t)
 
 
 def get_indices(scards, log=False):

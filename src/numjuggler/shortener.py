@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 
 def f(l):
 
@@ -14,7 +16,7 @@ def f(l):
             else:
                 # r-series stops here.
                 yield es
-                yield '{}r'.format(iR)
+                yield f'{iR}r'
                 iR = 0
                 es = e
         elif iD != 0:
@@ -26,20 +28,19 @@ def f(l):
             else:
                 # i-series stops here.
                 yield es
-                yield '{}i'.format(iI)
+                yield f'{iI}i'
                 yield ep
                 iI = 0
                 iD = 0
                 es = e
+        # there is no active series, and es -- previous element.
+        elif e == es:
+            # r-series starts here
+            iR = 1
         else:
-            # there is no active series, and es -- previous element.
-            if e == es:
-                # r-series starts here
-                iR = 1
-            else:
-                # i-series starts here
-                iI = 0
-                iD = e - es
+            # i-series starts here
+            iI = 0
+            iD = e - es
 
 if __name__ == '__main__':
     pass

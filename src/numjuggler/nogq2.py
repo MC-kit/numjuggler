@@ -1,7 +1,9 @@
-from __future__ import print_function, division, nested_scopes
+from __future__ import annotations
+
 import six
+
 try:
-    import pirs.core.trageom.vector as vector
+    from pirs.core.trageom import vector
 except:
     vector = None
 
@@ -24,14 +26,14 @@ if six.PY2 and vector is not None:
             ares = False
             astr = f1.format(atol)
         else:
-            ares = B - A <= atol
+            ares = atol >= B - A
             astr = f2.format(atol)
         if rtol is None:
             rres = False
             rstr = f1.format(rtol)
         else:
             b = max(map(abs, l))
-            rres = B - A <= rtol*b
+            rres = rtol*b >= B - A
             rstr = f2.format(rtol*b)
 
         result = ares or rres
@@ -39,12 +41,12 @@ if six.PY2 and vector is not None:
         if cmnt is not None:
             # assume it is a list of comments. Add here information
             c = cmnt.append
-            c('Are close check: ' + name + ': {}'.format(result))
+            c('Are close check: ' + name + f': {result}')
             if detailed:
-                c('  values: ' + ' '.join('{:15.8e}'.format(v) for v in l))
-                c('  B:      {:15.8e}'.format(B))
-                c('  A:      {:15.8e}'.format(A))
-                c('  B - A:  {:15.8e}'.format(B - A))
+                c('  values: ' + ' '.join(f'{v:15.8e}' for v in l))
+                c(f'  B:      {B:15.8e}')
+                c(f'  A:      {A:15.8e}')
+                c(f'  B - A:  {B - A:15.8e}')
                 c('  atol:   ' + astr)
                 c('  rtol*b: ' + rstr)
         return result
@@ -69,10 +71,10 @@ if six.PY2 and vector is not None:
         # Define normalization coeff gamma:
         A, B, C, D, E, F, G, H, J, K = pl
         ABC = sum((A, B, C))
-        cmnt.append(' A, B, C:' + ' '.join('{:15.8e}'.format(v) for v in (A, B, C)))
-        cmnt.append(' D, E, F:' + ' '.join('{:15.8e}'.format(v) for v in (D, E, F)))
-        cmnt.append(' G, H, J:' + ' '.join('{:15.8e}'.format(v) for v in (G, H, J)))
-        cmnt.append('       K:' + ' {:15.8e}'.format(K))
+        cmnt.append(' A, B, C:' + ' '.join(f'{v:15.8e}' for v in (A, B, C)))
+        cmnt.append(' D, E, F:' + ' '.join(f'{v:15.8e}' for v in (D, E, F)))
+        cmnt.append(' G, H, J:' + ' '.join(f'{v:15.8e}' for v in (G, H, J)))
+        cmnt.append('       K:' + f' {K:15.8e}')
 
         # List of normalization coefficients. 1 is always assumed
         gammas = [1.0, -1.0]
@@ -82,43 +84,43 @@ if six.PY2 and vector is not None:
             if areclose((1, B), atol=tABC, rtol=None):
                 g = 1.0/B
                 gammas.append(g)
-                cmnt.append('gamma_B = {:15.8e}'.format(g))
+                cmnt.append(f'gamma_B = {g:15.8e}')
             if areclose((1, C), atol=tABC, rtol=None):
                 g = 1.0/C
                 gammas.append(g)
-                cmnt.append('gamma_C = {:15.8e}'.format(g))
+                cmnt.append(f'gamma_C = {g:15.8e}')
         else:
             g = 2*E/(2*E*A - D*F)
             gammas.append(g)
-            cmnt.append('gamma_E = {:15.8e}'.format(g))
+            cmnt.append(f'gamma_E = {g:15.8e}')
 
         if areclose((0, F), atol=tDEF, rtol=None):
             if areclose((1, A), atol=tABC, rtol=None):
                 g = 1.0/A
                 gammas.append(g)
-                cmnt.append('gamma_A = {:15.8e}'.format(g))
+                cmnt.append(f'gamma_A = {g:15.8e}')
             if areclose((1, C), atol=tABC, rtol=None):
                 g = 1.0/C
                 gammas.append(g)
-                cmnt.append('gamma_C = {:15.8e}'.format(g))
+                cmnt.append(f'gamma_C = {g:15.8e}')
         else:
             g = 2*F/(2*F*B - D*E)
             gammas.append(g)
-            cmnt.append('gamma_F = {:15.8e}'.format(g))
+            cmnt.append(f'gamma_F = {g:15.8e}')
 
         if areclose((0, D), atol=tDEF, rtol=None):
             if areclose((1, B), atol=tABC, rtol=None):
                 g = 1.0/B
                 gammas.append(g)
-                cmnt.append('gamma_B = {:15.8e}'.format(g))
+                cmnt.append(f'gamma_B = {g:15.8e}')
             if areclose((1, A), atol=tABC, rtol=None):
                 g = 1.0/A
                 gammas.append(g)
-                cmnt.append('gamma_A = {:15.8e}'.format(g))
+                cmnt.append(f'gamma_A = {g:15.8e}')
         else:
             g = 2*D/(2*D*C - E*F)
             gammas.append(g)
-            cmnt.append('gamma_d = {:15.8e}'.format(g))
+            cmnt.append(f'gamma_d = {g:15.8e}')
 
         # Ensure that gamma=1 is considered first
         gammas = set(gammas)
@@ -135,19 +137,19 @@ if six.PY2 and vector is not None:
             tt = t2**0.5 if t2 >= 0 else float('nan')
             rc = r2c**0.5 if r2c >= 0 else float('nan')
             rk = r2k**0.5 if r2k >= 0 else float('nan')
-            cmnt.append('gamma: 1 + {:15.8e}'.format(gamma - 1.0))
-            cmnt.append('     t^2: {:15.8e}'.format(t2))
-            cmnt.append('      t : {:15.8e}'.format(tt))
-            cmnt.append('      n : ' + ' '.join('{:15.8e}'.format(v) for v in n))
-            cmnt.append('   (n,n): {:15.8e}'.format(n2))
-            cmnt.append('     r^2: {:15.8e}  {:15.8e}'.format(r2c, r2k))
-            cmnt.append('       r: {:15.8e}  {:15.8e}'.format(rc, rk))
-            cmnt.append('     R0c: ' + ' '.join('{:15.8e}'.format(v) for v in R0c))
-            cmnt.append('     R0k: ' + ' '.join('{:15.8e}'.format(v) for v in R0k))
-            cmnt.append('  (n,R0): {:15.8e}  {:15.8e}'.format(R0cn, R0kn))
-            cmnt.append(' (R0,R0): {:15.8e}  {:15.8e}'.format(R0c2, R0k2))
-            cmnt.append('      c1: {:15.8e}'.format(c1))
-            cmnt.append('      c2: {:15.8e}'.format(c2))
+            cmnt.append(f'gamma: 1 + {gamma - 1.0:15.8e}')
+            cmnt.append(f'     t^2: {t2:15.8e}')
+            cmnt.append(f'      t : {tt:15.8e}')
+            cmnt.append('      n : ' + ' '.join(f'{v:15.8e}' for v in n))
+            cmnt.append(f'   (n,n): {n2:15.8e}')
+            cmnt.append(f'     r^2: {r2c:15.8e}  {r2k:15.8e}')
+            cmnt.append(f'       r: {rc:15.8e}  {rk:15.8e}')
+            cmnt.append('     R0c: ' + ' '.join(f'{v:15.8e}' for v in R0c))
+            cmnt.append('     R0k: ' + ' '.join(f'{v:15.8e}' for v in R0k))
+            cmnt.append(f'  (n,R0): {R0cn:15.8e}  {R0kn:15.8e}')
+            cmnt.append(f' (R0,R0): {R0c2:15.8e}  {R0k2:15.8e}')
+            cmnt.append(f'      c1: {c1:15.8e}')
+            cmnt.append(f'      c2: {c2:15.8e}')
 
             # Check parameters common for cone and cylinder
             if isnan(n2) or areclose((0, n2), atol=1e-4, rtol=None):
@@ -224,14 +226,13 @@ if six.PY2 and vector is not None:
                 rsd = rsdc
 
             rsdmax = max(map(abs, sum(rsd.values(), ())))
-            cmnt.append(' Residuals for {}, {:15.8e}'.format(typ, rsdmax))
+            cmnt.append(f' Residuals for {typ}, {rsdmax:15.8e}')
             for d in distances:
-                cmnt.append(' at d={:10.3e}:'.format(d) + ' '.join('{:15.8e}'.format(v) for v in rsd[d]))
+                cmnt.append(f' at d={d:10.3e}:' + ' '.join(f'{v:15.8e}' for v in rsd[d]))
             if rsdmax > 1e-1:
                 typ = 'o'
                 continue
-            else:
-                cmnt.append(' Final max. residual for {}, {:15.8e}'.format(typ, rsdmax))
+            cmnt.append(f' Final max. residual for {typ}, {rsdmax:15.8e}')
 
             cmnt = ['c ' + c for c in cmnt]
             return typ, n, org, t2, r2, cmnt

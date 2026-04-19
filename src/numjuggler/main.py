@@ -1,22 +1,26 @@
 #!/usr/bin/env python
 
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import annotations
 
 import argparse as ap
-import sys
-from math import pi as Pi
 import os
+import sys
+
 from io import StringIO
+from math import pi as Pi
+
+from numjuggler import likefunc as lf
 from numjuggler import numbering as mn
 from numjuggler import parser as mp
 from numjuggler import ri_notation as rin
 from numjuggler import string_cells as stc
-from numjuggler import likefunc as lf
 from numjuggler import version
 
 try:
-    import pirs.mcnp.mctal.Mctal as Mctal, Vector3, Material
+    import Material
+    import Vector3
+
+    from pirs.mcnp.mctal import Mctal
 except:
     Material = None
     Mctal = None
@@ -110,17 +114,17 @@ def processing(args, cards, debuglog):
                 print(' '.join(map(str, rin.shorten(sorted(nset)))), file=outstr)
                 rp = None
                 for r1, r2 in mn._get_ranges_from_set(nset):
-                    print('{}{:>3s}'.format(indent, t[0]), end='', file=outstr)
+                    print(f'{indent}{t[0]:>3s}', end='', file=outstr)
                     if r1 == r2:
-                        rs = ' {}'.format(r1)
+                        rs = f' {r1}'
                     else:
-                        rs = ' {} -- {}'.format(r1, r2)
+                        rs = f' {r1} -- {r2}'
                     if rp is not None:
-                        fr = '{}'.format(r1 - rp - 1)
+                        fr = f'{r1 - rp - 1}'
                     else:
                         fr = ''
-                    ur = '{}'.format(r2 - r1 + 1)
-                    print('{:<30s} {:>8s} {:>8s}'.format(rs, ur, fr), file=outstr)
+                    ur = f'{r2 - r1 + 1}'
+                    print(f'{rs:<30s} {ur:>8s} {fr:>8s}', file=outstr)
                     rp = r2
     elif args.mode == 'remh':
         stc.remove_hash(cards,args.log)
@@ -146,11 +150,11 @@ def processing(args, cards, debuglog):
                  if cardstr.geom.removedp :
                    cname = cardstr.headstr.split()[0]
                    if (cardstr.geom.removedp[0] != cardstr.geom.removedp[1] ):
-                       flog.write(' {:>9s} : unbalanced\n'.format(cname))
+                       flog.write(f' {cname:>9s} : unbalanced\n')
                    elif ( args.opt == 'nochg' and cardstr.geom.removedp[0] == 0) :
-                      flog.write(' {:>9s} : nochg\n'.format(cname))
+                      flog.write(f' {cname:>9s} : nochg\n')
                    else:
-                      flog.write(' {:>9s} : {:>5}\n'.format(cname,cardstr.geom.removedp[0]))
+                      flog.write(f' {cname:>9s} : {cardstr.geom.removedp[0]:>5}\n')
               print(c.card(True), end='', file=outstr)
            else:
               print(c.card(), end='', file=outstr)
@@ -224,11 +228,11 @@ def processing(args, cards, debuglog):
         # SD card. Requires tally number and number of cells
         nt = fmt.split(':')[0][1:]
         nc = len(csets[ulst[0]])  # number of cells
-        print('sd{} 1 {}r'.format(nt, nc - 1), file=outstr)
-        print('fc{} '.format(nt), end='', file=outstr)
+        print(f'sd{nt} 1 {nc - 1}r', file=outstr)
+        print(f'fc{nt} ', end='', file=outstr)
         for u in ulst:
             print(len(csets[u]), end='', file=outstr)
-        print('', file=outstr)
+        print(file=outstr)
     elif args.mode == 'addgeom':
         # add stuff to geometry definition of cells.
         # Get info from the --map file:
@@ -294,7 +298,7 @@ def processing(args, cards, debuglog):
         if mb:
             for c in mb:
                 print(c.card(), end='', file=outstr)
-            print('', file=outstr)
+            print(file=outstr)
         # Title:
         if args.t == "0":
             # default one. Use title of the main input
@@ -308,14 +312,14 @@ def processing(args, cards, debuglog):
             # inputs have title cards, i.e. not continuation input files.
             t2 = blk2[mp.CID.title][0]
             # emphasize second title
-            cmnt = 'c {} {} cards ' + '"{}"'.format(t2.card()[:-1])
+            cmnt = 'c {} {} cards ' + f'"{t2.card()[:-1]}"'
         else:
             cmnt = 'c {} {} cards ' + args.c
         # Cells, surfaces and data:
         for t in [mp.CID.cell, mp.CID.surface, mp.CID.data]:
             for c in blk1[t]:
                 print(c.card(), end='', file=outstr)
-            if t in blk2 and blk2[t]:
+            if blk2.get(t):
                 # First check if blk2 actually contains any cards:
                 flg = False
                 for c in blk2[t]:
@@ -329,7 +333,7 @@ def processing(args, cards, debuglog):
                     print(cmnt.format('end', mp.CID.get_name(t)), file=outstr)
             if t != mp.CID.data:
                 # do not add empty line after data block
-                print('', file=outstr)
+                print(file=outstr)
     elif args.mode == 'uexp':
         if args.u == "0":
             N = " u=0 "
@@ -374,12 +378,12 @@ def processing(args, cards, debuglog):
         for k, cl in list(blocks.items()):
             if cl:
                 i = mp.CID.get_name(k)
-                with open(args.inp + '.{}{}'.format(k, i), 'w') as fout:
+                with open(args.inp + f'.{k}{i}', 'w') as fout:
                     for c in cl:
                         print(c.card(), end='', file=fout)
                 # create file with blank line delimiter
                 if k in (mp.CID.cell, mp.CID.surface):
-                    fout = open(args.inp + '.{}z'.format(k), 'w')
+                    fout = open(args.inp + f'.{k}z', 'w')
                     print(' ', file=fout)
                     fout.close()
     elif args.mode == 'matan':
@@ -437,7 +441,7 @@ def processing(args, cards, debuglog):
                 c.get_values()
                 if c.dtype == 'Mn' and c.name in rml:
                     m = Material.parseCard(c)
-                    m.name = 'm{} from {}'.format(c.name, args.inp)
+                    m.name = f'm{c.name} from {args.inp}'
                     rmd[c.name] = m
         # create new materials
         for n, d in dd.items():
@@ -463,7 +467,7 @@ def processing(args, cards, debuglog):
             if c.ctype == mp.CID.surface:
                 # compare this surface with all previous and if unique, add
                 # to dict
-                if c.stype not in us.keys():
+                if c.stype not in us:
                     us[c.stype] = {}
                 ust = us[c.stype]
                 for sn, s in list(ust.items()):
@@ -553,15 +557,12 @@ def processing(args, cards, debuglog):
             newsurf = args.s
         prevctype = None
         for c in cards:
-            if c.ctype == mp.CID.cell and c.name in cset:
-                pass
-            elif c.ctype == mp.CID.surface and c.name not in sset:
+            if (c.ctype == mp.CID.cell and c.name in cset) or (c.ctype == mp.CID.surface and c.name not in sset):
                 pass
             elif (c.ctype == mp.CID.data and
                   c.dtype == 'Mn' and
                   c.values[0][0] not in mset):
                 print('c qqq', repr(c.values[0][0]), file=outstr)
-                pass
             else:
                 # check that cell card does not depend on one of cset:
                 if c.get_refcells():
@@ -585,12 +586,12 @@ def processing(args, cards, debuglog):
         print('c sset', ' '.join(map(str, rin.shorten(sorted(sset)))), file=outstr)
         print('c uref', ' '.join(map(str, rin.shorten(sorted(uref)))), file=outstr)
         # print dummy universes, just in case they are needed
-        print('', file=outstr)
+        print(file=outstr)
         l = len(str(max(uref)))
-        f = '{{0:0{}d}}'.format(l)
+        f = f'{{0:0{l}d}}'
         for u in sorted(uref):
             s = f.format(u)
-            print('dummy_prefix{0} 0 dummy_surface u={0}'.format(s), file=outstr)
+            print(f'dummy_prefix{s} 0 dummy_surface u={s}', file=outstr)
         print('c mset', ' '.join(map(str, rin.shorten(sorted(mset)))), file=outstr)
     elif args.mode == 'combinec':
         # Combine cells, listed in -c flag.
@@ -611,7 +612,7 @@ def processing(args, cards, debuglog):
         for n in clst1[1:]:
             g = d[n].get_geom()
             g = ' '.join(g.splitlines())
-            new_card.geom_suffix += '({}) '.format(g)
+            new_card.geom_suffix += f'({g}) '
         # Print out the new file
         for c in cards:
             if c.ctype == mp.CID.cell:
@@ -627,8 +628,7 @@ def processing(args, cards, debuglog):
         ar = ag * Pi / 180.   # in radians
         # new transformation number:
         trn = args.t
-        trcard = '*tr{} 0 0 0 {} {} 90   {} {} 90   90 90 0'.format(
-            trn, ag, ag-90, 90+ag, ag)
+        trcard = f'*tr{trn} 0 0 0 {ag} {ag-90} 90   {90+ag} {ag} 90   90 90 0'
         # change all tr cards and surface cards:
         for c in cards:
             if c.ctype == mp.CID.surface:
@@ -699,7 +699,7 @@ def processing(args, cards, debuglog):
         else:
             # user-specified commenting string:
             cs = args.c
-        txt = [cs + l for l in open(args.map).readlines()]
+        txt = [cs + l for l in open(args.map)]
         for c in cards:
             print(c.card(), end='', file=outstr)
             if c.ctype == mp.CID.title:
@@ -731,7 +731,7 @@ def processing(args, cards, debuglog):
             cset = set(le)
         if args.map != '':
             # cset = set()
-            for l in open(args.map, 'r'):
+            for l in open(args.map):
                 for c in l.split():
                     cset.add(int(c))
         # get set of all cells:
@@ -830,13 +830,13 @@ def processing(args, cards, debuglog):
                 blk = c.ctype
             if c.ctype == mp.CID.surface:
                 if blk == mp.CID.cell:
-                    print('', file=outstr)
+                    print(file=outstr)
                     blk = c.ctype
                 if c.name in sset:
                     print(c.card(), end='', file=outstr)
             if c.ctype == mp.CID.data:
                 if blk != c.ctype:
-                    print('', file=outstr)
+                    print(file=outstr)
                     blk = c.ctype
                 if c.dtype == 'Mn' and c.values[0][0] in mset:
                     print(c.card(), end='', file=outstr)
@@ -859,8 +859,7 @@ def processing(args, cards, debuglog):
                     a2, g, kk = nogq.get_k(p)
                     if cflag:
                         crd = (crd[:-1] +
-                               '$ a^2={:12.6e} c={:12.6e}\n'.format(a2,
-                                                                    g + a2))
+                               f'$ a^2={a2:12.6e} c={g + a2:12.6e}\n')
                     if abs((g + a2) / a2) < 1e-6:
                         # this is a cylinder. Comment original card and
                         # write another one
@@ -881,8 +880,7 @@ def processing(args, cards, debuglog):
                                    '\n')
                         else:
                             crd = ''
-                        crd += '{} {} c/z {:15.8e} 0 {:15.8e}\n'.format(
-                            c.name, trn + trn0, x0, R)
+                        crd += f'{c.name} {trn + trn0} c/z {x0:15.8e} 0 {R:15.8e}\n'
                         # crd += 'c a^2={:12.6e} g={:12.6e} k={}\n'.format(a2, g, kk)
             print(crd, end='', file=outstr)
             if trd and c.ctype == mp.CID.blankline:
@@ -909,7 +907,7 @@ def processing(args, cards, debuglog):
                 if c.stype == 'gq':
                     tuf, pl = nogq2.get_params(' '.join(c.input))
                     typ, a, o, t2, r2, cl = nogq2.get_cone_or_cyl(pl)
-                    print('c Log for GQ card {}'.format(c.name), file=outstr)
+                    print(f'c Log for GQ card {c.name}', file=outstr)
                     for comment in cl:
                         print(comment, file=outstr)
                     crd1 = crd.splitlines()
@@ -986,7 +984,7 @@ def processing(args, cards, debuglog):
                                    'Line',
                                    'all',
                                    'unique',
-                                   '>{}'.format(Nmax)), file=outstr)
+                                   f'>{Nmax}'), file=outstr)
         sc = 0  # cell counter
         sa = 0  # all surfaces counter
         su = 0  # unique surface counter
@@ -1013,7 +1011,7 @@ def processing(args, cards, debuglog):
                 su += u
                 ma = max(ma, a)
                 mu = max(mu, u)
-        print('', file=outstr)
+        print(file=outstr)
         print('sum', ('{:>10d}'*3).format(sc, sa, su), file=outstr)
         print('max', ('{:>10d}'*3).format(00, ma, mu), file=outstr)
     elif args.mode == 'nofill':
@@ -1061,14 +1059,12 @@ def processing(args, cards, debuglog):
             uset = set()
             for c, d, u in res[m]:
                 uset.add(u)
-            print('m{} -------------- {} {}'.format(m,
-                                                    len(uset),
-                                                    sorted(uset)), file=outstr)
+            print(f'm{m} -------------- {len(uset)} {sorted(uset)}', file=outstr)
             for c, d, u in res[m]:
                 print(fmt.format(c, d, u), file=outstr)
             # Get a compact list of cells for material m
             cells = list(e[0] for e in res[m])
-            print('Compact list of cells for material m{}: '.format(m), file=outstr)
+            print(f'Compact list of cells for material m{m}: ', file=outstr)
             print(' '.join(map(str, rin.shorten(cells))), file=outstr)
         # If -m option is given, try to get cell volumes from there
         # -m argument is the mctal name followed by tally number of the
@@ -1101,7 +1097,7 @@ def processing(args, cards, debuglog):
             sv = 0.0
             sw = 0.0
             for m, (v, w) in sorted(res.items()):
-                print('{:20d}{:20e}{:20e}'.format(m, v, w), file=outstr)
+                print(f'{m:20d}{v:20e}{w:20e}', file=outstr)
                 if m > 0:
                     sv += v
                     sw += w
@@ -1129,10 +1125,10 @@ def processing(args, cards, debuglog):
             for u, l in sorted(res.items()):
                 if sflag:
                     l = sorted(l)
-                print('u{} '.format(u), end='', file=outstr)
+                print(f'u{u} ', end='', file=outstr)
                 for e in rin.shorten(l):
                     print(e, end=' ', file=outstr)
-                print('', file=outstr)
+                print(file=outstr)
                 print(len(l), file=outstr)
         else:
             uref = int(args.u)
@@ -1268,13 +1264,13 @@ def processing(args, cards, debuglog):
             zs = mz - (dz*0.5 - d)*v
             if u in 'xX':
                 fmt = 'sdef x {:12} y d2  z d3  vec {} dir 1 wgt {}'
-                print(fmt.format(xs, '{} 0 0'.format(v), dz*dy), file=outstr)
+                print(fmt.format(xs, f'{v} 0 0', dz*dy), file=outstr)
             elif u in 'yY':
                 fmt = 'sdef y {:12} x d1  z d3  vec {} dir 1 wgt {}'
-                print(fmt.format(ys, '0 {} 0'.format(v), dx*dz), file=outstr)
+                print(fmt.format(ys, f'0 {v} 0', dx*dz), file=outstr)
             elif u in 'zZ':
                 fmt = 'sdef z {:12} x d1  y d2  vec {} dir 1 wgt {}'
-                print(fmt.format(zs, '0 0 {}'.format(v), dx*dy), file=outstr)
+                print(fmt.format(zs, f'0 0 {v}', dx*dy), file=outstr)
             fm2 = 'si{:1} h {:12} {:12} $ {} {}'
             print(fm2.format(1, x1 + d, x2 - d, dx, mx), file=outstr)
             print(fm2.format(2, y1 + d, y2 - d, dy, my), file=outstr)
@@ -1288,7 +1284,7 @@ def processing(args, cards, debuglog):
             s -- spherical surface number, r -- its radius. Radius is
             needed to compute weight for volume calculations.
             """
-            print('sdef sur {} nrm -1 wgt {:12.7e}'.format(s, Pi * r**2), file=outstr)
+            print(f'sdef sur {s} nrm -1 wgt {Pi * r**2:12.7e}', file=outstr)
         # Set of surface names to be checked for surface source candidates
         sset = set()
         if args.s != '0':
@@ -1338,9 +1334,9 @@ def processing(args, cards, debuglog):
                 ns = max(d['sur']) + 1
                 nc = max(d['cel']) + 1
                 print('c universe with circumscribing sphere', file=outstr)
-                print('{} 0 {} imp:n=1 imp:p=1 u=1 '.format(nc, -ns), file=outstr)
-                print('{} 0  {} imp:n=0 imp:p=0 u=1 '.format(nc+1, ns), file=outstr)
-                print('', file=outstr)
+                print(f'{nc} 0 {-ns} imp:n=1 imp:p=1 u=1 ', file=outstr)
+                print(f'{nc+1} 0  {ns} imp:n=0 imp:p=0 u=1 ', file=outstr)
+                print(file=outstr)
                 print('c Circumscribing sphere: ', file=outstr)
                 print(ns, k, cx, cy, cz, r, file=outstr)
                 surfaces[k] = (ns, r, ns, r)
@@ -1353,15 +1349,13 @@ def processing(args, cards, debuglog):
                 if surfaces[k] is None:
                     print(k, file=outstr)
                     raise ValueError('Planes not found for planar source')
-                else:
-                    n1, v1, n2, v2 = surfaces[k]
-                    params.extend([v1, v2])
+                n1, v1, n2, v2 = surfaces[k]
+                params.extend([v1, v2])
             print_planar(params, d=1e-5, u=args.u)
         elif args.u == 's':
             if surfaces['s'] is None:
                 raise ValueError('Spheres not found for spherical source')
-            else:
-                n1, v1, n2, v2 = surfaces['s']
+            n1, v1, n2, v2 = surfaces['s']
             if print_sdef:
                 print_spherical(n2, v2)
         if args.c != '0':
@@ -1428,7 +1422,7 @@ def processing(args, cards, debuglog):
             dn = getattr(args, t[0])
             if dn == 'i':
                 maps[t] = imaps[t]
-                maps[t].doc = 'Indexing function for {}'.format(t)
+                maps[t].doc = f'Indexing function for {t}'
                 maps[t].default = None   # This will raise error if applied to non-existent value
             elif dn != '0':
                 maps[t] = lf.LikeFunction(log=args.log != '')
@@ -1436,7 +1430,7 @@ def processing(args, cards, debuglog):
                 # do not modify zero numbers (important for material
                 # numbers)
                 maps[t].mappings[lf.Range(0)] = lf.const_func(0)
-                maps[t].doc = 'Function for {} from command line'.format(t)
+                maps[t].doc = f'Function for {t} from command line'
         for c in cards:
             c.apply_map(maps)
             print(c.card(), end='', file=outstr)
@@ -1450,7 +1444,7 @@ def processing(args, cards, debuglog):
 def main(args=sys.argv[1:]):
     p = ap.ArgumentParser(prog='numjuggler', description=descr, epilog=epilog)
     p.add_argument('--version', action='version',
-                   version='%(prog)s {}'.format(version))
+                   version=f'%(prog)s {version}')
     p.add_argument('inp', help='MCNP input file')
     p.add_argument('-c', help=help_c,
                    type=str,
@@ -1483,7 +1477,7 @@ def main(args=sys.argv[1:]):
     p.add_argument('--debug', help='Additional output for debugging',
                    action='store_true')
     p.add_argument('--preservetabs',
-                   help='Do not convert tabs to spaces. By default tabs are replaced with spaces according to MCNP5 rules (User''s manual Vol. II p. 1-3)',
+                   help='Do not convert tabs to spaces. By default tabs are replaced with spaces according to MCNP5 rules (Users manual Vol. II p. 1-3)',
                    action='store_true')
     p.add_argument('--log', help='Log file.',
                    type=str,
@@ -1505,11 +1499,11 @@ def main(args=sys.argv[1:]):
                 import numjuggler as nj
                 dir1 = os.path.split(nj.__file__)[0]  # remove filename
                 dir1 = os.path.split(dir1)[0]         # remove the most deep dir
-                hlp = os.path.join(dir1, 'help/{}.rst'.format(harg.h))
-                print('Reading help from {}'.format(hlp))
+                hlp = os.path.join(dir1, f'help/{harg.h}.rst')
+                print(f'Reading help from {hlp}')
                 print(open(hlp).read())
-            except Exception as e:
-                print('Cannot read help file for "{}"'.format(harg.h))
+            except Exception:
+                print(f'Cannot read help file for "{harg.h}"')
 
         # elif harg.h in dhelp:
         #     print(dhelp[harg.h])

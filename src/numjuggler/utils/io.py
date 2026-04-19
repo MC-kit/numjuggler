@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import sys
 
@@ -24,12 +26,12 @@ def resolve_fname_or_stream(fname_or_stream, mode="r"):
         else:
             yield sys.stdout
     elif (
-        is_input
-        and hasattr(fname_or_stream, "read")
-        or not is_input
-        and hasattr(fname_or_stream, "write")
+        (is_input
+        and hasattr(fname_or_stream, "read"))
+        or (not is_input
+        and hasattr(fname_or_stream, "write"))
     ):
         yield fname_or_stream
     else:
-        with open(fname_or_stream, mode=mode) as fid:
+        with Path(fname_or_stream).open(mode=mode) as fid:
             yield fid

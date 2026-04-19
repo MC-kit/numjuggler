@@ -1,17 +1,19 @@
-# -*- coding: utf-8 -*-
 
 """
 Functions for parsing MCNP input files.
 """
+from __future__ import annotations
 
-from __future__ import print_function
-
+import os
 import re
 import warnings
-import six
-import os
-from chardet import UniversalDetector
+
 from io import StringIO
+
+import six
+
+from chardet import UniversalDetector
+
 from numjuggler.utils import PartialFormatter
 
 try:
@@ -47,7 +49,7 @@ re_fll = re.compile(r'\*{0,1}fill[=\s]+', flags=re.IGNORECASE)  # TODO: this wil
 
 # If type specifier not given, any data type can be formatted:
 def fmt_gen(s):
-    return '{' + ':<{}'.format(len(s)) + '}'
+    return '{' + f':<{len(s)}' + '}'
 
 
 fmt_d = fmt_gen
@@ -57,7 +59,7 @@ fmt_s = fmt_gen
 partial_formmatter = PartialFormatter()
 
 
-class __CIDClass(object):
+class __CIDClass:
     """
     There are two levels of card types. 1-st level is purely defined by card
     position in the input file.  There can be:
@@ -93,15 +95,14 @@ class __CIDClass(object):
         for k, v in list(cls.__dict__.items()):
             if '__' not in k and v == cid:
                 return k
-        else:
-            print('No attribute with name', cid)
-            raise ValueError()
+        print('No attribute with name', cid)
+        raise ValueError
 
 
 CID = __CIDClass()
 
 
-class Card(object):
+class Card:
     """
     Representation of a card.
     """
@@ -164,7 +165,6 @@ class Card(object):
         # Split card to template and meaningful part is always needed. Other
         # operations are optional.
         self.get_input()
-        return
 
     def _get_value_by_type(self, t):
         """
@@ -205,9 +205,7 @@ class Card(object):
     def print_debug(self, comment, key='tihv'):
         d = self.debug
         if d:
-            print('Line {}, {} card. {}'.format(self.pos,
-                                                CID.get_name(self.ctype),
-                                                comment), file=d)
+            print(f'Line {self.pos}, {CID.get_name(self.ctype)} card. {comment}', file=d)
             if 't' in key:
                 print('    template:', repr(self.template), file=d)
             if 'i' in key:
@@ -231,7 +229,7 @@ class Card(object):
                         self.print_debug('get_input: bad char in input cards',
                                          '')
                     else:
-                        raise ValueError('Bad character in input file. ' +
+                        raise ValueError('Bad character in input file. '
                                          'Run with --debug option.')
 
         if self.ctype in (CID.comment, CID.blankline):
@@ -280,7 +278,6 @@ class Card(object):
             # TODO: dtype and name of the card can be defined already here.
 
         self.print_debug('get_input', 'ti')
-        return
 
     def _protect_nums(self):
         """
@@ -333,7 +330,6 @@ class Card(object):
         self.hidden = d
 
         self.print_debug('_protect_nums', 'ih')
-        return
 
     def get_values(self):
         """
@@ -366,7 +362,6 @@ class Card(object):
         self.values = vt
 
         self.print_debug('get_values', 'iv')
-        return
 
     def get_refcells(self):
         """
@@ -376,13 +371,12 @@ class Card(object):
             return None
         if self.__cr != -1:
             return self.__cr
-        else:
-            s = set()
-            for v, t in self.values:
-                if t == 'cel':
-                    s.add(v)
-            self.__cr = s
-            return self.__cr
+        s = set()
+        for v, t in self.values:
+            if t == 'cel':
+                s.add(v)
+        self.__cr = s
+        return self.__cr
 
     def get_geom(self):
         """
@@ -405,15 +399,14 @@ class Card(object):
             return None
         if self.__u != -1:
             return self.__u
+        # get it only once:
+        for v, t in self.values:
+            if t == 'u':
+                self.__u = v
+                break
         else:
-            # get it only once:
-            for v, t in self.values:
-                if t == 'u':
-                    self.__u = v
-                    break
-            else:
-                self.__u = None
-            return self.__u
+            self.__u = None
+        return self.__u
 
     def get_m(self):
         """
@@ -424,18 +417,17 @@ class Card(object):
 
         if self.__m != -1:
             return self.__m
+        if 'like' in ''.join(self.input).lower():
+            # material name should be given in another cell.
+            pass
+        for v, t in self.values:
+            if t == 'mat':
+                self.__m = v
+                break
         else:
-            if 'like' in ''.join(self.input).lower():
-                # material name should be given in another cell.
-                pass
-            for v, t in self.values:
-                if t == 'mat':
-                    self.__m = v
-                    break
-            else:
-                # raise ValueError("Cell does not have material specs")
-                self.__m = -2
-            return self.__m
+            # raise ValueError("Cell does not have material specs")
+            self.__m = -2
+        return self.__m
 
     def get_d(self):
         """
@@ -447,15 +439,14 @@ class Card(object):
         if self.get_m() == 0:
             self.__d = 0
             return self.__d
-        elif self.get_m() == -2:
+        if self.get_m() == -2:
             # this is like-but cell
             self.__d = -100.
             return self.__d
-        else:
-            # density entry is hidden in the input and available as the 1-st
-            # entry in self.hidden dictionary.
-            self.__d = float(self.hidden['~'][0])
-            return self.__d
+        # density entry is hidden in the input and available as the 1-st
+        # entry in self.hidden dictionary.
+        self.__d = float(self.hidden['~'][0])
+        return self.__d
 
     def set_d(self, v):
         """
@@ -476,19 +467,18 @@ class Card(object):
 
         if self.__f != -1 and newv is None:
             return self.__f
+        # get it only once:
+        for i in range(len(self.values)):
+            v, t = self.values[i]
+            if t == 'fill':
+                if newv is not None:
+                    v = newv
+                    self.values[i] = (v, t)
+                self.__f = v
+                break
         else:
-            # get it only once:
-            for i in range(len(self.values)):
-                v, t = self.values[i]
-                if t == 'fill':
-                    if newv is not None:
-                        v = newv
-                        self.values[i] = (v, t)
-                    self.__f = v
-                    break
-            else:
-                self.__f = None
-            return self.__f
+            self.__f = None
+        return self.__f
 
     def get_imp(self, vals={}):
         """
@@ -499,34 +489,32 @@ class Card(object):
 
         if self.__i != -1 and not vals:
             return self.__i
-        else:
-            res = {}
-            inpt = ' '.join(self.input).lower()
-            for p in 'npe':
-                key = 'imp:' + p
+        res = {}
+        inpt = ' '.join(self.input).lower()
+        for p in 'npe':
+            key = 'imp:' + p
 
-                s = inpt.split(key)
-                if len(s) == 1:
-                    # there is no key in the input line.
-                    continue
-                else:
-                    n = s[0].count('~')
-                    res[key] = float(self.hidden['~'][n])
-                    if p in vals:
-                        # change value only if necessary
-                        if res[key] != vals[p]:
-                            res[key] = vals[p]
-                            self.hidden['~'][n] = str(vals[p])
+            s = inpt.split(key)
+            if len(s) == 1:
+                # there is no key in the input line.
+                continue
+            n = s[0].count('~')
+            res[key] = float(self.hidden['~'][n])
+            if p in vals:
+                # change value only if necessary
+                if res[key] != vals[p]:
+                    res[key] = vals[p]
+                    self.hidden['~'][n] = str(vals[p])
 
-                # for s in self.hidden.get('~', []):
-                #     sl = s.lower()
-                #     if key in sl:
-                #         val = float(sl.replace(key, '').replace('=', ''))
-                #         res[key] = val
-            if not res:
-                res['imp:n'] = 1
-            self.__i = res
-            return self.__i
+            # for s in self.hidden.get('~', []):
+            #     sl = s.lower()
+            #     if key in sl:
+            #         val = float(sl.replace(key, '').replace('=', ''))
+            #         res[key] = val
+        if not res:
+            res['imp:n'] = 1
+        self.__i = res
+        return self.__i
 
     def remove_fill(self):
         """
@@ -578,7 +566,6 @@ class Card(object):
                 break
 
         self.print_debug('remove_fill', 'iv')
-        return
 
     def card(self, wrap=False, comment=True):
         """
@@ -635,7 +622,7 @@ class Card(object):
                                 self.print_debug('Cannot wrap line ' +
                                                  repr(i), '')
                                 warnings.warn('Cannot wrap card'
-                                              ' on line {}'.format(self.pos))
+                                              f' on line {self.pos}')
                                 break
                         else:
                             # input i fits to one line. Do nothing.
@@ -677,7 +664,6 @@ class Card(object):
                 self.print_debug(i, '')
             self.input = inpt
             self.print_debug('after remove_spaces', 'i')
-        return
 
     def apply_map(self, f):
         """
@@ -702,7 +688,6 @@ class Card(object):
             newvals.append((newval, t[1]))
         self.values = newvals
         self.print_debug('after apply_map', 'vi')
-        return
 
 
 # def _parse_geom(geom):
@@ -820,8 +805,7 @@ def _split_cell(input_, self):
             if e[0].isalpha() or e[0] == '*':
                 parm = [e] + t
                 break
-            else:
-                geom.append(e)
+            geom.append(e)
 
         # print '_split_cell geom', geom, parm
         # replace integer entries in geom block:
@@ -949,7 +933,7 @@ def _split_cell(input_, self):
             # warn if there is possibility for an array following the fill
             # keyword:
             # TODO fill value can be an array
-            if 'fill' == s.lower() and 'lat' in ''.join(parm).lower():
+            if s.lower() == 'fill' and 'lat' in ''.join(parm).lower():
                 print('WARNING: fill keyword followed by an array', end=' ')
                 print('cannot be parsed')
 
@@ -1016,7 +1000,7 @@ def _get_int(s):
     for c in s:
         if r and c.isalpha():
             break
-        elif c.isdigit():
+        if c.isdigit():
             r += c
     return r
 
@@ -1110,7 +1094,7 @@ def _split_data(input_):
                 inpt = inpt.replace(ss, tp, 1)
                 vals.append((int(ss), tpe))
                 fmts.append(fmt_d(ss))
-    elif 'fmesh' == t[0][:5].lower() and t[0][5].isdigit():
+    elif t[0][:5].lower() == 'fmesh' and t[0][5].isdigit():
         # fmesh card
         dtype = 'fmesh'
         ns = _get_int(t[0])  # tally number
@@ -1134,10 +1118,7 @@ def is_commented(l):
 
     # remove newline chars at the end of l:
     l = l.splitlines()[0]
-    if 'c ' in l[0:6].lstrip().lower():
-        res = True
-        # print 'is_com "c "',
-    elif 'c' == l.lower():
+    if 'c ' in l[0:6].lstrip().lower() or l.lower() == 'c':
         res = True
         # print 'is_com "c"',
     # print 'is_com', res
@@ -1166,7 +1147,7 @@ if six.PY2:
         """
         from os import stat
         iname = inp
-        dname = '.{}.~'.format(os.path.basename(inp))
+        dname = f'.{os.path.basename(inp)}.~'
         try:
             it = stat(iname).st_mtime
         except OSError as e:
@@ -1180,7 +1161,7 @@ if six.PY2:
         if it < dt and debug is None:
             # print('Reading from dump')
             # dump is youger
-            dfile = open(dname, 'r')
+            dfile = open(dname)
             cl = cPickle.load(dfile)
             for c in cl:
                 yield c
@@ -1211,7 +1192,7 @@ def index_(line, chars='$&'):
     """
     Find the first index of one of the chars in line.
     """
-    r = re.compile('[{}]'.format(chars))
+    r = re.compile(f'[{chars}]')
     m = r.search(line)
     if m:
         i = m.end() - 1
@@ -1262,13 +1243,12 @@ def get_cards_from_input(inp, debug=None, preservetabs=False):
         """
         if preserve:
             return l[:]
-        else:
-            while '\t' in l:
-                i = l.index('\t')
-                ii = (i // ts + 1) * ts - i
-                # print("c Line {}: tab replaced with {} spaces".format(cln + 1, ii))
-                l = l[:i] + ' '*ii + l[i+1:]
-            return l[:]
+        while '\t' in l:
+            i = l.index('\t')
+            ii = (i // ts + 1) * ts - i
+            # print("c Line {}: tab replaced with {} spaces".format(cln + 1, ii))
+            l = l[:i] + ' '*ii + l[i+1:]
+        return l[:]
 
     # load input deck file inside a string buffer
     f = load_decode_buffer(inp)
@@ -1285,7 +1265,7 @@ def get_cards_from_input(inp, debug=None, preservetabs=False):
     cln += 1
     # kw = l.lower().split()[0]
     kw = l.lstrip()
-    if 'message:' == kw[:8].lower():
+    if kw[:8].lower() == 'message:':
         # read message block right here
         res = []
         while not is_blankline(l):
@@ -1297,7 +1277,7 @@ def get_cards_from_input(inp, debug=None, preservetabs=False):
         l = replace_tab(next(f), cln, preserve=preservetabs)
         cln += 1
         ncid = CID.title
-    elif 'continue' == kw[:8].lower():
+    elif kw[:8].lower() == 'continue':
         # input file for continue job. Contains only data block.
         ncid = CID.data
     else:
@@ -1470,7 +1450,7 @@ def are_close_lists(x, y, re=1e-6, pci=[]):
             for xx, yy in zip(xl, yl):
                 r = are_close_vals(xx, yy, re)
                 if not r:
-                    m = 'diff at {}'.format(n)
+                    m = f'diff at {n}'
                     break
             else:
                 m = 'all elements are close or equal'

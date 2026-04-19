@@ -1,13 +1,13 @@
 """
 Functions to renumber cells, surfaces, etc. in MCNP input file.
 """
-from __future__ import print_function
+from __future__ import annotations
 
-import warnings
 import collections
+import warnings
 
 
-class _Range(object):
+class _Range:
     """
     Represents a range or a point.
     """
@@ -19,21 +19,18 @@ class _Range(object):
             n1, n2 = sorted((n1, n2))
             self.n1 = n1
             self.n2 = n2
-        return
 
     def __contains__(self, value):
         if self.n2 is None:
             return value == self.n1
-        else:
-            return (self.n1 <= value <= self.n2)
+        return (self.n1 <= value <= self.n2)
 
     def __str__(self):
         if self.n2 is None:
             return str(self.n1)
-        else:
-            return '[{} -- {}]'.format(self.n1, self.n2)
+        return f'[{self.n1} -- {self.n2}]'
 
-class LikeFunction(object):
+class LikeFunction:
     """
     Class of callables that take two arguments, a number (integer) and a type
     (char or string):
@@ -75,28 +72,24 @@ class LikeFunction(object):
         self.__lf = log   # flag to log or not.
         self.__ld = {}    # here log is written, if log.
 
-        return
 
     @staticmethod
     def __applyD(f, n):
         if isinstance(f, collections.Callable):
             return f(n)
-        else:
-            return f
+        return f
 
     @staticmethod
     def __applyL(f, n):
         if isinstance(f, collections.Callable):
             return f(n)
-        else:
-            return n + int(f)
+        return n + int(f)
 
     def __get_mapping(self, t):
         for key in [t, t[0]]:
             if key in self.__p:
                 return self.__p[key]
-        else:
-            return None, None
+        return None, None
 
     def __call__(self, n, t):
         dn0, param = self.__get_mapping(t)
@@ -105,7 +98,7 @@ class LikeFunction(object):
             nnew = n
             # and do not log this mapping
             return n
-        elif isinstance(param, dict):
+        if isinstance(param, dict):
             # param is a dictionary of the form {nold: nnew}
             nnew = param.get(n, dn0)
             nnew = self.__applyD(nnew, n)
@@ -123,15 +116,14 @@ class LikeFunction(object):
             k = (t, nnew)
             if k in ld:
                 if ld[k] != n:
-                    warnings.warn('Non-injective mapping. ' +
-                                  '({}, {}) and ({}, {}) ' +
-                                  'are mapped to {}'.format(t, ld[k],
-                                                            t, n, nnew))
+                    warnings.warn('Non-injective mapping. '
+                                  '({}, {}) and ({}, {}) '
+                                  f'are mapped to {t}')
             else:
                 ld[k] = n
         # check that void material not changed:
         if t[0].lower() == 'm' and n == 0 and nnew != 0:
-            print('WARNING: material {} replaced with {}.'.format(n, nnew))
+            print(f'WARNING: material {n} replaced with {nnew}.')
             print('Add cell density to the resulting input file.')
         return nnew
 
@@ -151,7 +143,7 @@ class LikeFunction(object):
                 for n in sorted(d[t].keys()):
                     nnew = d[t][n]
                     if nnew != n:
-                        print('{} {:>6d}:   {:>6d}'.format(t, nnew, n), file=f)
+                        print(f'{t} {nnew:>6d}:   {n:>6d}', file=f)
 
 
 def get_numbers(scards):
@@ -237,7 +229,7 @@ def read_map_file(fname):
     d = {}
     for k in list(td.keys()):
         d[td[k]] = [0, []]  # default dn and list of ranges.
-    with open(fname, 'r') as f:
+    with open(fname) as f:
         for l in f:
             ll = l.lower().lstrip()
             if ll and ll[0] in list(td.keys()) and ':' in ll:
@@ -289,7 +281,7 @@ def _parse_map_line(l):
     rs, os = l[1:].split(':')
 
     # Allow commas and no spaces in ranges
-    rs = rs.replace('--', ' -- ').replace(',' ' ')
+    rs = rs.replace('--', ' -- ').replace(', ')
     # Use only 1-st entry in the map rule
     os = os.split()[0].lstrip()
 
@@ -312,15 +304,14 @@ def _get_map_ranges(s):
     for t in tl:
         if t == '--':
             is_range = True
+        elif is_range:
+            yield v1, int(t)
+            v1 = None
+            is_range = False
         else:
-            if is_range:
-                yield v1, int(t)
-                v1 = None
-                is_range = False
-            else:
-                if v1 is not None:
-                    yield v1, v1
-                v1 = int(t)
+            if v1 is not None:
+                yield v1, v1
+            v1 = int(t)
 
 
 if __name__ == '__main__':

@@ -3,6 +3,7 @@
 """
 Analyse fmesh cards.
 """
+from __future__ import annotations
 
 from numjuggler.parser import Card, are_close_vals
 
@@ -63,7 +64,7 @@ class FmeshCard(Card):
         """
         Redefine to include call to _analyse
         """
-        super(FmeshCard, self).get_values()
+        super().get_values()
         self._analyse()
 
     def _analyse(self):
@@ -80,7 +81,6 @@ class FmeshCard(Card):
                 setattr(self, t, tuple(_get_elements(tokens, float)))
             elif t[1:] in ('ints',):
                 setattr(self, t, tuple(_get_elements(tokens, int)))
-        return
 
     def ints(self, d=0):
         """

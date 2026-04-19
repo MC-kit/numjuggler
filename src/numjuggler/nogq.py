@@ -1,8 +1,7 @@
 """
 Functions to convert an arbitrary GQ cylinder into C/X+TR-defined cylinder.
 """
-
-from __future__ import print_function
+from __future__ import annotations
 
 try:
     # try because numpy might be unavailable.
@@ -10,9 +9,9 @@ try:
 except ImportError:
     print("Numpy package is required for --mode nogq but cannot ")
     print("be found. Install it with ")
-    print("")
+    print()
     print(" > pip install numpy")
-    print("")
+    print()
     raise
 except:
     raise
@@ -32,7 +31,7 @@ def get_k(p):
         # at least one of DEF is non-zero.
         ii = abs(DEF).argmax()
         iv = DEF[ii]
-        a2 = numpy.roll(ABC, 1)[ii] - DEF[DEF != iv].prod()/iv
+        a2 = numpy.roll(ABC, 1)[ii] - DEF[iv != DEF].prod()/iv
 
     # expression for gamma holds for any ABC and DEF:
     g = ABC.sum() - 3.0*a2
@@ -82,7 +81,6 @@ def get_a2(p):
     if F != 0.:
         a2dic['F'] = B - D*E/F*0.5
     if D == E == F == 0.:
-        #
         pass
     for k, a2 in list(a2dic.items()):
         c = ABC - 2.0*a2
@@ -100,11 +98,11 @@ def is_gq_cylinder(p):
     # A, B and C are non-negative
     if a < 0 or b < 0 or c < 0:
         print(' not a cylinder since a, b or c is negative: ',  p[0:3])
-        raise ValueError()
+        raise ValueError
 
     if not numpy.isclose(d*e*f, -8.*(1.-a)*(1.-b)*(1.-c)):
         print(' D*E*F differs from -8(1-A)(1-B)(1-C)', p)
-        raise ValueError()
+        raise ValueError
 
     return 1.0/p[0:3].sum() * p
 

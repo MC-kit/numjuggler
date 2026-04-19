@@ -1,20 +1,20 @@
-from __future__ import print_function, absolute_import, division
+from __future__ import annotations
+
+import string
 
 import six
-import string
 
 
 def make_label(item):
-    if 0 < len(item):
+    if len(item) > 0:
         return '{' + item + '}'
-    else:
-        return item
+    return item
 
 
 class SafeDict(dict):
 
     def __getitem__(self, item):
-        return super(SafeDict, self).__getitem__(item) or ''
+        return super().__getitem__(item) or ''
 
     def __missing__(self, key):
         return make_label(key)
@@ -98,5 +98,4 @@ class PartialFormatter(string.Formatter):
 
         if six.PY2:
             return result
-        else:
-            return result, auto_arg_index
+        return result, auto_arg_index

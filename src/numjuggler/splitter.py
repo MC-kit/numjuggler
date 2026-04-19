@@ -14,6 +14,8 @@ Everywhere the repitition syntax is possible, that is Ni, Nr, etc.
 """
 
 # List of cell parameter keywords
+from __future__ import annotations
+
 LoCL = [
     "imp",
     "vol",

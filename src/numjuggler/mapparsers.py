@@ -1,4 +1,5 @@
-# -*- coding: utf-8 -*-
+
+from __future__ import annotations
 
 from collections import OrderedDict
 
@@ -13,7 +14,7 @@ def lines(fname):
 
     Empty lines and everything after `#` is skipped.
     """
-    with open(fname, 'r') as f:
+    with open(fname) as f:
         for l in f:
             ll = l.split('#')[0].strip()
             if ll and ':' in ll:

@@ -5,8 +5,7 @@ This is for a list of cells, where repititions and multiplication by a constant
 are not possible or seldom.
 
 """
-
-from __future__ import print_function
+from __future__ import annotations
 
 
 def shorten(list_, rmin=2, imin=2):
@@ -59,7 +58,7 @@ def expand(list_):
     they are expanded.
     """
     es = None
-    # this value not actually used. Set only to avoid checker warning about undefined n 
+    # this value not actually used. Set only to avoid checker warning about undefined n
     n = -1
     for e in list_:
         if es is not None:
@@ -128,4 +127,4 @@ if __name__ == '__main__':
     for imin in [1, 2, 3, 4]:
         for rmin in [1, 2, 3, 4]:
             test_(tr + ti, rmin, imin,
-                  'CustomList imin={}, rmin={}'.format(imin, rmin))
+                  f'CustomList imin={imin}, rmin={rmin}')
