@@ -14,6 +14,7 @@ src/numjuggler/version.py
 # Environments
 .cache/
 .idea/
+.vscode/
 
 # Dev.scripts results
 numjuggler.dot

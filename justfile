@@ -170,7 +170,7 @@ export JUST_LOG := log
 # Run pre-commit on all files
 [group: 'style']
 @pre-commit:
-  uv run --no-dev --group pre-commit pre-commit run --show-diff-on-failure --color=always --all-files
+  uv run --no-dev --group style pre-commit run --show-diff-on-failure --color=always --all-files
 
 # Run mypy
 # [group: 'lint']
@@ -179,7 +179,7 @@ export JUST_LOG := log
 
 [group: 'style']
 @pylint:
-  uv run --no-dev --group lint pylint --recursive=y --output-format colorized src tests
+  uv run --no-dev --group style pylint --recursive=y --output-format colorized src tests
 
 # [group: 'lint']
 # @pyright:
@@ -188,7 +188,7 @@ export JUST_LOG := log
 # Lint with ty
 [group: 'style']
 @ty:
-  ty check 
+  uv run --no-dev --group style ty check 
 
 # # Check rst-texts
 # [group: 'docs']
