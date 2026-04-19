@@ -1,10 +1,11 @@
-
 """
 Functions for parsing MCNP input files.
 """
+
 from __future__ import annotations
 
 import os
+from pathlib import Path
 import re
 import warnings
 
@@ -26,30 +27,33 @@ except ImportError:
     import pickle as cPickle
 
 # integer with one prefix character
-re_int = re.compile(r'\D{0,1}\d+')
+re_int = re.compile(r"\D{0,1}\d+")
 
 # interior of square brackets for tally in lattices
-re_ind = re.compile(r'\[.+\]', flags=re.DOTALL)
+re_ind = re.compile(r"\[.+\]", flags=re.DOTALL)
 
 # repitition syntax of MCNP input file
-re_rpt = re.compile(r'\d+[ri]', flags=re.IGNORECASE)
+re_rpt = re.compile(r"\d+[ri]", flags=re.IGNORECASE)
 
 # Regexp for parameters to be hidden, e.g. tmp, imp:, vol.
-re_prm = re.compile(r"""
+re_prm = re.compile(
+    r"""
     ((?:
     imp:[npe] |
     tmp |
     vol) \s* ={0,1} \s*)     # Value prefix, e.g. "imp:n=", "tmp ", "vol = "
     (\S+)                    # Value itself
-    """, re.IGNORECASE + re.VERBOSE)
+    """,
+    re.IGNORECASE + re.VERBOSE,
+)
 
 # fill keyword
-re_fll = re.compile(r'\*{0,1}fill[=\s]+', flags=re.IGNORECASE)  # TODO: this will also match fill===
+re_fll = re.compile(r"\*{0,1}fill[=\s]+", flags=re.IGNORECASE)  # TODO: this will also match fill===
 
 
 # If type specifier not given, any data type can be formatted:
 def fmt_gen(s):
-    return '{' + f':<{len(s)}' + '}'
+    return "{" + f":<{len(s)}" + "}"
 
 
 fmt_d = fmt_gen
@@ -77,6 +81,7 @@ class __CIDClass:
 
     This class is to describe the 1-st level of card types.
     """
+
     # no-information cards
     comment = -1
     blankline = -2
@@ -93,9 +98,9 @@ class __CIDClass:
         Return the name of the card type by its index.
         """
         for k, v in list(cls.__dict__.items()):
-            if '__' not in k and v == cid:
+            if "__" not in k and v == cid:
                 return k
-        print('No attribute with name', cid)
+        print("No attribute with name", cid)
         raise ValueError
 
 
@@ -106,6 +111,7 @@ class Card:
     """
     Representation of a card.
     """
+
     def __init__(self, lines, ctype, pos, debug=None):
 
         # Original lines, as read from the input file
@@ -132,7 +138,7 @@ class Card:
         # template string. Represents the general structure of the card. It is
         # a copy of lines, but meaningful parts are replaced by format
         # specifiers, {}
-        self.template = ''
+        self.template = ""
 
         # List of strings represenging meaningful parts of the card. The
         # original multi-line string card is obtained as
@@ -156,11 +162,11 @@ class Card:
         self.__u = -1  # -1 means undefined. None -- not specified in input
         self.__f = -1  # fill
         self.__m = -1  # material
-        self.__d = ''  # density
+        self.__d = ""  # density
         self.__i = -1  # importances
         self.__cr = -1  # set of reference cells.
         # surface properties
-        self.__st = ''  # '' means undefined.
+        self.__st = ""  # '' means undefined.
 
         # Split card to template and meaningful part is always needed. Other
         # operations are optional.
@@ -170,82 +176,79 @@ class Card:
         """
         Returns the first value of type t found in self.values.
         """
-        vl, tl = zip(*self.values)
+        vl, tl = zip(*self.values, strict=False)
         try:
             i = tl.index(t)
         except ValueError:
             return None
-        finally:
-            return vl[i]
+        return vl[i]
 
     def _set_value_by_type(self, t, v):
         """
         Sets the first value of type t to v in self.values.
         """
-        vl, tl = zip(*self.values)
+        _vl, tl = zip(*self.values, strict=False)
         i = tl.index(t)
         self.values[i] = (v, t)
 
     @property
     def geom_prefix(self):
-        return self._get_value_by_type('#gpr')
+        return self._get_value_by_type("#gpr")
 
     @geom_prefix.setter
     def geom_prefix(self, value):
-        return self._set_value_by_type('#gpr', value)
+        return self._set_value_by_type("#gpr", value)
 
     @property
     def geom_suffix(self):
-        return self._get_value_by_type('#gsu')
+        return self._get_value_by_type("#gsu")
 
     @geom_suffix.setter
     def geom_suffix(self, value):
-        return self._set_value_by_type('#gsu', value)
+        return self._set_value_by_type("#gsu", value)
 
-    def print_debug(self, comment, key='tihv'):
+    def print_debug(self, comment, key="tihv"):
         d = self.debug
         if d:
-            print(f'Line {self.pos}, {CID.get_name(self.ctype)} card. {comment}', file=d)
-            if 't' in key:
-                print('    template:', repr(self.template), file=d)
-            if 'i' in key:
-                print('    input:   ', self.input, file=d)
-            if 'h' in key:
-                print('    hidden:  ', self.hidden, file=d)
-            if 'v' in key:
-                print('    values:  ', self.values, file=d)
+            print(f"Line {self.pos}, {CID.get_name(self.ctype)} card. {comment}", file=d)
+            if "t" in key:
+                print("    template:", repr(self.template), file=d)
+            if "i" in key:
+                print("    input:   ", self.input, file=d)
+            if "h" in key:
+                print("    hidden:  ", self.hidden, file=d)
+            if "v" in key:
+                print("    values:  ", self.values, file=d)
 
     def get_input(self, check_bad_chars=False):
         """
         Recompute template, input and hidden attributes from lines
         """
 
-        mline = ''.join(self.lines)
+        mline = "".join(self.lines)
         if check_bad_chars:
-            bad_chars = '\t'
+            bad_chars = "\t"
             for c in bad_chars:
                 if c in mline:
                     if self.debug:
-                        self.print_debug('get_input: bad char in input cards',
-                                         '')
+                        self.print_debug("get_input: bad char in input cards", "")
                     else:
-                        raise ValueError('Bad character in input file. '
-                                         'Run with --debug option.')
+                        raise ValueError("Bad character in input file. Run with --debug option.")
 
         if self.ctype in (CID.comment, CID.blankline):
             # nothing to do for comments or blanklines:
-            self.input = ''
+            self.input = ""
             self.template = mline
 
         else:
             # TODO: protect { and } in comment parts of the card.
             tmpl = []  # part of template
             inpt = []  # input, meaningful parts of the card.
-            if mline.split()[0][:2] == 'fc':
+            if mline.split()[0][:2] == "fc":
                 # this is tally comment. It always in one line and is not
                 # delimited by & or $
                 i = mline[:80]
-                t = mline.replace(i, '{}', 1)
+                t = mline.replace(i, "{}", 1)
                 inpt = [i]
                 tmpl = [t]
             else:
@@ -255,7 +258,7 @@ class Card:
                     else:
                         # entries optionally delimited from comments by $ or &
                         # requires that delimiters prefixed with space
-                        d = index_(l, '$&')
+                        d = index_(l, "$&")
                         # d1 = l.find(' $')
                         # d2 = l.find(' &')
                         # if -1 < d1 and -1 < d2:
@@ -273,11 +276,11 @@ class Card:
                         inpt.append(i)
                         tmpl.append(fmt_s(i) + t)
             self.input = inpt
-            self.template = ''.join(tmpl)
+            self.template = "".join(tmpl)
 
             # TODO: dtype and name of the card can be defined already here.
 
-        self.print_debug('get_input', 'ti')
+        self.print_debug("get_input", "ti")
 
     def _protect_nums(self):
         """
@@ -285,51 +288,53 @@ class Card:
         represent cell, surface or a cell parameter with some unused char.
         """
 
-        inpt = '\n'.join(self.input)
+        inpt = "\n".join(self.input)
 
         d = {}
 
         # in cell card:
         if self.ctype == CID.cell:  # and 'like' not in inpt:
-            d['~'] = []  # float values in cells
+            d["~"] = []  # float values in cells
 
             # Replace material density
-            if 'like' not in inpt:
-                tokens = inpt.replace('=', ' ').split()
+            if "like" not in inpt:
+                tokens = inpt.replace("=", " ").split()
                 cell, mat, rho = tokens[:3]
                 if int(mat) != 0:
                     for s in (cell, mat, rho):
-                        inpt = inpt.replace(s, '~', 1)
-                    inpt = inpt.replace('~', cell, 1)
-                    inpt = inpt.replace('~', mat, 1)
-                    d['~'].append(rho)
+                        inpt = inpt.replace(s, "~", 1)
+                    inpt = inpt.replace("~", cell, 1)
+                    inpt = inpt.replace("~", mat, 1)
+                    d["~"].append(rho)
 
             # hide parameters that not to be changed:
             for s1, s2 in re_prm.findall(inpt):
-                d['~'].append(s2)
-                inpt = inpt.replace(s1 + s2, s1 + '~', 1)
+                d["~"].append(s2)
+                inpt = inpt.replace(s1 + s2, s1 + "~", 1)
 
         # replace repitition syntax in junks:
         sbl = re_rpt.findall(inpt)
         if sbl:
             for s in sbl:
-                inpt = inpt.replace(s, '!', 1)
-            d['!'] = sbl
+                inpt = inpt.replace(s, "!", 1)
+            d["!"] = sbl
 
-        if (self.ctype == CID.data and
-                inpt.lstrip().lower()[0] == 'f' and
-                inpt.lstrip()[1].isdigit()):
+        if (
+            self.ctype == CID.data
+            and inpt.lstrip().lower()[0] == "f"
+            and inpt.lstrip()[1].isdigit()
+        ):
             # this is tally card. Hide indexes in square brackets
             sbl = re_ind.findall(inpt)
             if sbl:
                 for s in sbl:
-                    inpt = inpt.replace(s, '|', 1)
-                d['|'] = sbl
+                    inpt = inpt.replace(s, "|", 1)
+                d["|"] = sbl
 
-        self.input = inpt.split('\n')
+        self.input = inpt.split("\n")
         self.hidden = d
 
-        self.print_debug('_protect_nums', 'ih')
+        self.print_debug("_protect_nums", "ih")
 
     def get_values(self):
         """
@@ -348,7 +353,7 @@ class Card:
         elif self.ctype == CID.data:
             inpt, vt, dtype = _split_data(self.input)
             self.dtype = dtype
-            if dtype == 'TRn':
+            if dtype == "TRn":
                 unit, inpt, fvals = _parse_tr(inpt)
                 self.unit = unit
                 vt += fvals
@@ -361,7 +366,7 @@ class Card:
         self.input = inpt
         self.values = vt
 
-        self.print_debug('get_values', 'iv')
+        self.print_debug("get_values", "iv")
 
     def get_refcells(self):
         """
@@ -373,7 +378,7 @@ class Card:
             return self.__cr
         s = set()
         for v, t in self.values:
-            if t == 'cel':
+            if t == "cel":
                 s.add(v)
         self.__cr = s
         return self.__cr
@@ -384,9 +389,9 @@ class Card:
         string.
         """
         p, s = self.geom_prefix, self.geom_suffix
-        self.geom_prefix = '§'
-        self.geom_suffix = '§'
-        geom = self.card().split('§')[1]
+        self.geom_prefix = "§"
+        self.geom_suffix = "§"
+        geom = self.card().split("§")[1]
         self.geom_prefix = p
         self.geom_suffix = s
         return geom
@@ -401,7 +406,7 @@ class Card:
             return self.__u
         # get it only once:
         for v, t in self.values:
-            if t == 'u':
+            if t == "u":
                 self.__u = v
                 break
         else:
@@ -417,11 +422,11 @@ class Card:
 
         if self.__m != -1:
             return self.__m
-        if 'like' in ''.join(self.input).lower():
+        if "like" in "".join(self.input).lower():
             # material name should be given in another cell.
             pass
         for v, t in self.values:
-            if t == 'mat':
+            if t == "mat":
                 self.__m = v
                 break
         else:
@@ -433,7 +438,7 @@ class Card:
         """
         For cell card return density
         """
-        if self.__d != '':
+        if self.__d != "":
             return self.__d
 
         if self.get_m() == 0:
@@ -441,11 +446,11 @@ class Card:
             return self.__d
         if self.get_m() == -2:
             # this is like-but cell
-            self.__d = -100.
+            self.__d = -100.0
             return self.__d
         # density entry is hidden in the input and available as the 1-st
         # entry in self.hidden dictionary.
-        self.__d = float(self.hidden['~'][0])
+        self.__d = float(self.hidden["~"][0])
         return self.__d
 
     def set_d(self, v):
@@ -455,7 +460,7 @@ class Card:
         It is assumed that get_values() method is called before this.
         """
         if self.get_m() > 0:
-            self.hidden['~'][0] = v
+            self.hidden["~"][0] = v
             self.__d = float(v)
 
     def get_f(self, newv=None):
@@ -470,7 +475,7 @@ class Card:
         # get it only once:
         for i in range(len(self.values)):
             v, t = self.values[i]
-            if t == 'fill':
+            if t == "fill":
                 if newv is not None:
                     v = newv
                     self.values[i] = (v, t)
@@ -480,31 +485,32 @@ class Card:
             self.__f = None
         return self.__f
 
-    def get_imp(self, vals={}):
+    def get_imp(self, vals=None):
         """
         Returns importances, if explicitly specified in the cell card.
         """
+        if vals is None:
+            vals = {}
         if self.ctype != CID.cell:
             return None
 
         if self.__i != -1 and not vals:
             return self.__i
         res = {}
-        inpt = ' '.join(self.input).lower()
-        for p in 'npe':
-            key = 'imp:' + p
+        inpt = " ".join(self.input).lower()
+        for p in "npe":
+            key = "imp:" + p
 
             s = inpt.split(key)
             if len(s) == 1:
                 # there is no key in the input line.
                 continue
-            n = s[0].count('~')
-            res[key] = float(self.hidden['~'][n])
-            if p in vals:
-                # change value only if necessary
-                if res[key] != vals[p]:
-                    res[key] = vals[p]
-                    self.hidden['~'][n] = str(vals[p])
+            n = s[0].count("~")
+            res[key] = float(self.hidden["~"][n])
+            # change value only if necessary
+            if p in vals and res[key] != vals[p]:
+                res[key] = vals[p]
+                self.hidden["~"][n] = str(vals[p])
 
             # for s in self.hidden.get('~', []):
             #     sl = s.lower()
@@ -512,7 +518,7 @@ class Card:
             #         val = float(sl.replace(key, '').replace('=', ''))
             #         res[key] = val
         if not res:
-            res['imp:n'] = 1
+            res["imp:n"] = 1
         self.__i = res
         return self.__i
 
@@ -540,32 +546,32 @@ class Card:
         # replace with spaces all FILL-related tokens
         vals = []  # new values list.
         oldv = self.values[:]
-        state = 'before'
+        state = "before"
         while oldv:
             v, t = oldv.pop(0)
-            if state == 'before' and t == 'fill':
-                v = ' '
-                state = 'afterU'
-            elif state == 'afterU' and '(' in t:
-                v = ' '
-                state = 'after('
-            elif state == 'after(':
-                v = ' '
-                if ')' in t:
-                    state = 'after'
+            if state == "before" and t == "fill":
+                v = " "
+                state = "afterU"
+            elif state == "afterU" and "(" in t:
+                v = " "
+                state = "after("
+            elif state == "after(":
+                v = " "
+                if ")" in t:
+                    state = "after"
             vals.append((v, t))
         self.values = vals
 
         # Remove FILL from the input
         for n, i in enumerate(self.input):
-            if 'fill' in i.lower():
+            if "fill" in i.lower():
                 # This part of input contains the fill keyword. This keyword is
                 # optionally prepended with an asterix and followed by a sign
-                i = re_fll.sub(' ', i)
-                self.input[n] = i
+                _i = re_fll.sub(" ", i)
+                self.input[n] = _i
                 break
 
-        self.print_debug('remove_fill', 'iv')
+        self.print_debug("remove_fill", "iv")
 
     def card(self, wrap=False, comment=True):
         """
@@ -573,7 +579,7 @@ class Card:
         """
         if self.input:
             # put values back to meaningful parts:
-            inpt = '\n'.join(self.input)
+            inpt = "\n".join(self.input)
             inpt = inpt.format(*[t[0] for t in self.values])
 
             # put back hidden parts:
@@ -581,56 +587,53 @@ class Card:
                 for v in vl:
                     inpt = inpt.replace(k, v, 1)
 
-            inpt = inpt.split('\n')
+            inpt = inpt.split("\n")
             if not comment:
-                return ' '.join(inpt)
+                return " ".join(inpt)
 
             if wrap:  # and self.ctype != CID.title:
-                indent = ' '*5
+                indent = " " * 5
                 if self.ctype == CID.title:
-                    indent = 'c' + indent
-                tparts = re.split(r'\{.*?\}', self.template)[1:]
+                    indent = "c" + indent
+                tparts = re.split(r"\{.*?\}", self.template)[1:]
                 # print 'wrapped inp', repr(self.template)
                 # print 'wrapped spl', repr(tparts)
-                newt = ['']  # new template parts
-                newi = []    # new input parts
-                self.print_debug('card wrap=True', '')
-                for i, t in zip(inpt, tparts):
-                    self.print_debug('    ' + repr(i) + repr(t), '')
+                newt = [""]  # new template parts
+                newi = []  # new input parts
+                self.print_debug("card wrap=True", "")
+                for _i, t in zip(inpt, tparts, strict=False):
+                    i = _i
+                    self.print_debug("    " + repr(i) + repr(t), "")
                     il = []
                     tl = [t]
 
                     # while len(i.rstrip()) > 79:
                     while len(i.rstrip()) > 80:
                         # first try to shift to left
-                        if i[:5] == ' '*5:
-                            i = ' '*5 + i.lstrip()
+                        if i[:5] == " " * 5:
+                            i = " " * 5 + i.lstrip()
                         if len(i.rstrip()) > 79:
                             # input i must be wrapped. Find proper place:
-                            for dc in ' :':
+                            for dc in " :":
                                 k = i.rstrip().rfind(dc, 0, 75)
                                 if k > 6:
                                     il.append(i[:k])
-                                    tl.append('\n')
+                                    tl.append("\n")
                                     i = indent + i[k:]
-                                    self.print_debug('card wrap=True' +
-                                                     repr(il[-1]) +
-                                                     repr(i), '')
+                                    self.print_debug("card wrap=True" + repr(il[-1]) + repr(i), "")
                                     break
                             else:
                                 # there is no proper place to wrap.
-                                self.print_debug('Cannot wrap line ' +
-                                                 repr(i), '')
-                                warnings.warn('Cannot wrap card'
-                                              f' on line {self.pos}')
+                                self.print_debug("Cannot wrap line " + repr(i), "")
+                                warnings.warn(f"Cannot wrap card on line {self.pos}", stacklevel=2)
                                 break
                         else:
                             # input i fits to one line. Do nothing.
                             pass
 
                     newt += tl
-                    newi += il + [i]
-                tmpl = '{}'.join(newt)
+                    newi += [*il, i]
+                tmpl = "{}".join(newt)
                 inpt = newi
             else:
                 tmpl = self.template
@@ -645,49 +648,44 @@ class Card:
         """
         Remove extra spaces from meaningful parts.
         """
-        self.print_debug('before remove_spaces', 'i')
+        self.print_debug("before remove_spaces", "i")
         if self.ctype in (CID.cell, CID.surface, CID.data):
             inpt = []
-            for i in self.input:
-                indented = i[:5] == ' '*5
+            for _i in self.input:
+                i = _i
+                indented = i[:5] == " " * 5
                 # leave only one sep. space
-                i = ' '.join(i.split())
+                i = " ".join(i.split())
                 i = i.strip()
                 # spaces before/after some characters are not needed:
-                for c in '):':
-                    i = i.replace(' ' + c, c)
-                for c in '(:':
-                    i = i.replace(c + ' ', c)
+                for c in "):":
+                    i = i.replace(" " + c, c)
+                for c in "(:":
+                    i = i.replace(c + " ", c)
                 if indented:
-                    i = ' '*5 + i
+                    i = " " * 5 + i
                 inpt.append(i)
-                self.print_debug(i, '')
+                self.print_debug(i, "")
             self.input = inpt
-            self.print_debug('after remove_spaces', 'i')
+            self.print_debug("after remove_spaces", "i")
 
     def apply_map(self, f):
         """
         Replace Ni in self.values by Mi = f(Ni, Ti).
         """
-        self.print_debug('before apply_map', 'vi')
+        self.print_debug("before apply_map", "vi")
 
         # u and fill should be renumberd in the same way, but types
         # must remain different, to let explicit u=0
         # self.values = map(lambda t: (f(t[0], t[1]), t[1]), self.values)
         newvals = []
         for t in self.values:
-            if t[1] == 'fill':
-                t1 = 'u'
-            else:
-                t1 = t[1]
+            t1 = "u" if t[1] == "fill" else t[1]
             # newvals.append((f(t[0], t1), t[1]))
-            if t1 in f:
-                newval = f[t1](t[0])
-            else:
-                newval = t[0]
+            newval = f[t1](t[0]) if t1 in f else t[0]
             newvals.append((newval, t[1]))
         self.values = newvals
-        self.print_debug('after apply_map', 'vi')
+        self.print_debug("after apply_map", "vi")
 
 
 # def _parse_geom(geom):
@@ -725,7 +723,7 @@ class Card:
 #         fmts.append('{}')
 
 
-def _split_cell(input_, self):
+def _split_cell(input_, _self):
     """
     Replace integers in the meaningful parts of a cell card with format
     specifiers, and return a list of replaced values together with their types.
@@ -736,37 +734,36 @@ def _split_cell(input_, self):
     # all of them should land to the card template, therefore, after all
     # entries are replaced with format specifiers, it can be split back to a
     # list easily at \n positions.
-    inpt = '\n'.join(input_)
+    inpt = "\n".join(input_)
 
     vals = []  # list of values
     fmts = []  # value format. It has digits, thus inserted into inpt later.
-    tp = '_'   # temporary placeholder for format specifiers
+    tp = "_"  # temporary placeholder for format specifiers
 
     # Parse part before parameters. This is different for usual and like-but
     # syntax.  As result, all entries are replaced in inpt and i, the index
     # where parameter's part starts in inpt, is computed.
 
-    if 'like ' in inpt.lower():
-
+    if "like " in inpt.lower():
         # Get cell name
         t = inpt.split()
         js = t.pop(0)
         inpt = inpt.replace(js, tp, 1)
-        vals.append((int(js), 'cel'))
+        vals.append((int(js), "cel"))
         fmts.append(fmt_d(js))
 
         # Get reference cell name:
         t.pop(0)  # like
         js = t.pop(0)
         inpt = inpt.replace(js, tp, 1)
-        vals.append((int(js), 'cel'))
+        vals.append((int(js), "cel"))
         fmts.append(fmt_d(js))
 
         # compute i -- where first param token starts
         t.pop(0)  # but
         p0 = t.pop(0)
         i = inpt.index(p0)
-        parm = [p0] + t
+        parm = [p0, *t]
 
     else:
         # cell card has usual format.
@@ -776,23 +773,23 @@ def _split_cell(input_, self):
         # Get cell name
         js = t.pop(0)
         inpt = inpt.replace(js, tp, 1)
-        vals.append((int(js), 'cel'))
+        vals.append((int(js), "cel"))
         fmts.append(fmt_d(js))
 
         # get material and density.
         # Density, if specified in cells card, should be allready hidden
         ms = t.pop(0)
         if int(ms) == 0:
-            inpt = inpt.replace(ms, tp+tp, 1)
+            inpt = inpt.replace(ms, tp + tp, 1)
         else:
             inpt = inpt.replace(ms, tp, 1)
-            inpt = inpt.replace('~', '~'+tp, 1)
-        vals.append((int(ms), 'mat'))
+            inpt = inpt.replace("~", "~" + tp, 1)
+        vals.append((int(ms), "mat"))
         fmts.append(fmt_d(ms))
 
         # placeholder for geometry prefix
-        vals.append(('', '#gpr'))
-        fmts.append('{}')
+        vals.append(("", "#gpr"))
+        fmts.append("{}")
 
         # Get geometry and parameters blocks. I assume that geom and param
         # blocks are separated by at least one space, so there will be an
@@ -802,17 +799,18 @@ def _split_cell(input_, self):
         parm = []
         while t:
             e = t.pop(0)
-            if e[0].isalpha() or e[0] == '*':
-                parm = [e] + t
+            if e[0].isalpha() or e[0] == "*":
+                parm = [e, *t]
                 break
             geom.append(e)
 
         # print '_split_cell geom', geom, parm
         # replace integer entries in geom block:
-        for s in re_int.findall(' '.join(geom)):
+        for _s in re_int.findall(" ".join(geom)):
+            s = _s
             # print 's from re_int', repr(s)
             # s is a surface or a cell (later only if prefixed by #)
-            t = 'cel' if s[0] == '#' else 'sur'
+            t = "cel" if s[0] == "#" else "sur"
             s = s if s[0].isdigit() else s[1:]
             f = fmt_d(s)
             inpt = inpt.replace(s, tp, 1)
@@ -824,19 +822,16 @@ def _split_cell(input_, self):
             fmts.append(f)
 
         # geometry suffix
-        vals.append(('', '#gsu'))
-        fmts.append('{}')
+        vals.append(("", "#gsu"))
+        fmts.append("{}")
         # insert placeholder for geometry suffix
         if parm:
-          inpt = inpt.replace(parm[0], '_' + parm[0], 1)
+            inpt = inpt.replace(parm[0], "_" + parm[0], 1)
 
         # At this point all geom entries are replaced in inpt. The rest should
         # work only with the parm part of inpt. To ensure this, inpt is splitted
         # into inpt_geom and inpt_parm:
-        if parm:
-            i = inpt.index(parm[0])
-        else:
-            i = len(inpt)
+        i = inpt.index(parm[0]) if parm else len(inpt)
 
     inpt_geom = inpt[:i]
     inpt_parm = inpt[i:]
@@ -850,92 +845,94 @@ def _split_cell(input_, self):
 
     # replace values in parameters block. Values are prefixed with = or space(s)
     # Note that tmp and imp values must be hidden
-    t = ' '.join(parm).replace('=', ' ').split()  # get rid of =.
+    t = " ".join(parm).replace("=", " ").split()  # get rid of =.
     while t:
         s = t.pop(0)
         # print '_split_cell s: ', repr(s)
-        if s.lower() == 'u':
+        if s.lower() == "u":
             vs = t.pop(0)
             vv = int(vs)
             vf = fmt_d(vs)
-            vt = 'u'
+            vt = "u"
             inpt_parm = inpt_parm.replace(vs, tp, 1)
             vals.append((vv, vt))
             fmts.append(vf)
-        elif 'fill' in s.lower():
+        elif "fill" in s.lower():
             # print '_split_cell: has fill!'
             # assume that only one integer follows the fill keyword, optionally
             # with transformation in parentheses.
             vs = t.pop(0)
             # if transformation in parentheses follows the universe number
             # immediately, split this manually:
-            if '(' in vs:
-                i = vs.index('(')
+            if "(" in vs:
+                i = vs.index("(")
                 ttt = vs[i:]
                 vs = vs[:i]
                 # vs, ttt = vs.split('(')
                 t.insert(0, ttt)
             vv = int(vs)
             vf = fmt_d(vs)
-            vt = 'fill'
+            vt = "fill"
             inpt_parm = inpt_parm.replace(vs, tp, 1)
             vals.append((vv, vt))
             fmts.append(vf)
             # fill value can be followed by transformation in parentheses
             # Fill value can be optionally followed by transformation number of
             # transformation parameters in parentheses
-            if t and '(' in t[0]:
+            if t and "(" in t[0]:
                 vsl = []  # lists of strings, values, formats and types
                 vvl = []
                 vfl = []
                 vtl = []
 
                 # add opening parenthesis
-                vsl.append('(')
-                vvl.append('(')
-                vfl.append(fmt_s('('))
-                vtl.append('#(')  # #-types are internal, don't output in --mode info.
-                t[0] = t[0].replace('(', '', 1)
+                vsl.append("(")
+                vvl.append("(")
+                vfl.append(fmt_s("("))
+                vtl.append("#(")  # #-types are internal, don't output in --mode info.
+                t[0] = t[0].replace("(", "", 1)
 
                 # add entries in parentheses and the closing parenthis
-                while vsl[-1] != ')':
+                while vsl[-1] != ")":
                     vs = t.pop(0)
-                    if ')' in vs:
-                        vs = vs.replace(')', '', 1)
+                    if ")" in vs:
+                        vs = vs.replace(")", "", 1)
                         if vs:
                             vsl.append(vs)
                             vvl.append(vs)
                             vfl.append(fmt_s(vs))
-                            vtl.append('#tparam')
-                        vsl.append(')')
-                        vvl.append(')')
-                        vfl.append(fmt_s(')'))
-                        vtl.append('#)')
+                            vtl.append("#tparam")
+                        vsl.append(")")
+                        vvl.append(")")
+                        vfl.append(fmt_s(")"))
+                        vtl.append("#)")
                     elif vs:
                         vsl.append(vs)
                         vvl.append(vs)
                         vfl.append(fmt_s(vs))
-                        vtl.append('#tparam')
+                        vtl.append("#tparam")
 
                 # check if only one parameter in parenthethes -- it is tr
                 # number, not tr parameter
                 if len(vsl) == 3:
                     vvl[1] = int(vvl[1])
                     vfl[1] = fmt_d(vsl[1])
-                    vtl[1] = 'tr'
+                    vtl[1] = "tr"
 
                 # add all strings, values, formats and types:
-                for vs, vv, vf, vt in zip(vsl, vvl, vfl, vtl):
-                    inpt_parm = inpt_parm.replace(vs, tp, 1) # TODO: here only parm part of inpt should be modified.
+                for vs, vv, vf, vt in zip(vsl, vvl, vfl, vtl, strict=False):
+                    inpt_parm = inpt_parm.replace(
+                        vs, tp, 1
+                    )  # TODO: here only parm part of inpt should be modified.
                     vals.append((vv, vt))
                     fmts.append(vf)
 
             # warn if there is possibility for an array following the fill
             # keyword:
             # TODO fill value can be an array
-            if s.lower() == 'fill' and 'lat' in ''.join(parm).lower():
-                print('WARNING: fill keyword followed by an array', end=' ')
-                print('cannot be parsed')
+            if s.lower() == "fill" and "lat" in "".join(parm).lower():
+                print("WARNING: fill keyword followed by an array", end=" ")
+                print("cannot be parsed")
 
     inpt = inpt_geom + inpt_parm
 
@@ -943,26 +940,26 @@ def _split_cell(input_, self):
     for f in fmts:
         inpt = inpt.replace(tp, f, 1)
 
-    return inpt.split('\n'), vals
+    return inpt.split("\n"), vals
 
 
 def _split_surface(input_):
     """
     Similar to _split_cell(), but for surface cards.
     """
-    inpt = '\n'.join(input_)
+    inpt = "\n".join(input_)
     t = inpt.split()
 
     vals = []  # like in split_cell()
     fmts = []
-    tp = '_'
+    tp = "_"
 
     # get surface name:
     js = t.pop(0)
     if not js[0].isdigit():
         js = js[1:]
     inpt = inpt.replace(js, tp, 1)
-    vals.append((int(js), 'sur'))
+    vals.append((int(js), "sur"))
     fmts.append(fmt_d(js))
 
     # get TR or periodic surface:
@@ -970,14 +967,14 @@ def _split_surface(input_):
     if ns[0].isdigit():
         # TR is given
         inpt = inpt.replace(ns, tp, 1)
-        vals.append((int(ns), 'tr'))
+        vals.append((int(ns), "tr"))
         fmts.append(fmt_d(ns))
         st = t.pop(0)
-    elif ns[0] == '-':
+    elif ns[0] == "-":
         # periodic surface
         ns = ns[1:]
         inpt = inpt.replace(ns, tp, 1)
-        vals.append((int(ns), 'sur'))
+        vals.append((int(ns), "sur"))
         fmts.append(fmt_d(ns))
         st = t.pop(0)
     elif ns[0].isalpha():
@@ -992,11 +989,11 @@ def _split_surface(input_):
     for f in fmts:
         inpt = inpt.replace(tp, f, 1)
 
-    return inpt.split('\n'), vals, st, scoef
+    return inpt.split("\n"), vals, st, scoef
 
 
 def _get_int(s):
-    r = ''
+    r = ""
     for c in s:
         if r and c.isalpha():
             break
@@ -1009,74 +1006,69 @@ def _parse_tr(input_):
     """
     input_ should be already passed through _split_data()
     """
-    inpt = '\n'.join(input_)
+    inpt = "\n".join(input_)
     inp1, inp2 = inpt.split(None, 1)
-    if inp1.lstrip()[0] == '*':
-        unit = '*'
-    else:
-        unit = ''
+    unit = "*" if inp1.lstrip()[0] == "*" else ""
 
     svals = inp2.split()
     for s in svals:
-        inp2 = inp2.replace(s, '{}', 1)
+        inp2 = inp2.replace(s, "{}", 1)
 
-    fvals = [(float(s), 'float') for s in svals]
-    return unit, (inp1 + ' ' + inp2).split('\n'), fvals
+    fvals = [(float(s), "float") for s in svals]
+    return unit, (inp1 + " " + inp2).split("\n"), fvals
 
 
 def _split_data(input_):
-    inpt = '\n'.join(input_)
+    inpt = "\n".join(input_)
     t = inpt.split()
 
     vals = []
     fmts = []
-    tp = '_'
+    tp = "_"
 
-    if 'tr' in t[0][:3].lower():
+    if "tr" in t[0][:3].lower():
         # TRn card
-        dtype = 'TRn'
+        dtype = "TRn"
         ns = _get_int(t[0])
         inpt = inpt.replace(ns, tp, 1)
-        vals.append((int(ns), 'tr'))
+        vals.append((int(ns), "tr"))
         fmts.append(fmt_d(ns))
-    elif (t[0][0].lower() == 'm' and
-          'mode' not in t[0].lower() and
-          'mesh' not in t[0].lower()):
+    elif t[0][0].lower() == "m" and "mode" not in t[0].lower() and "mesh" not in t[0].lower():
         # This is the Mn, MTn or MPNn card
         ms = _get_int(t[0])
         inpt = inpt.replace(ms, tp, 1)
-        vals.append((int(ms), 'mat'))
+        vals.append((int(ms), "mat"))
         fmts.append(fmt_d(ms))
         # additional tests to define data card type:
         if t[0][1].isdigit():
-            dtype = 'Mn'
-        elif t[0][1].lower() == 't':
-            dtype = 'MTn'
-        elif t[0][1].lower() == 'p':
-            dtype = 'MPNn'
-    elif t[0][0].lower() == 'f' and t[0][1].isdigit():
+            dtype = "Mn"
+        elif t[0][1].lower() == "t":
+            dtype = "MTn"
+        elif t[0][1].lower() == "p":
+            dtype = "MPNn"
+    elif t[0][0].lower() == "f" and t[0][1].isdigit():
         # FN card
-        dtype = 'Fn'
+        dtype = "Fn"
         ns = _get_int(t[0])  # tally number
         inpt = inpt.replace(ns, tp, 1)
-        vals.append((int(ns), 'tal'))
+        vals.append((int(ns), "tal"))
         fmts.append(fmt_d(ns))
 
         # define type of integers by tally type:
         nv = int(ns[-1])
         if nv in [1, 2]:
-            typ = 'sur'
+            typ = "sur"
         elif nv in [4, 6, 7, 8]:
-            typ = 'cel'
+            typ = "cel"
         else:
-            typ = ''
+            typ = ""
 
         if typ:
             # Lattice indices, surrounded by square brakets must allready be
             # hidden
 
             # Special treatment, if tally has 'u=' syntax.
-            hasu = 'u' in inpt.lower() and '=' in inpt.lower()
+            hasu = "u" in inpt.lower() and "=" in inpt.lower()
             # find all integers -- they are cells or surfaces
             for s in re_int.findall(inpt):
                 ss = s[1:]
@@ -1087,19 +1079,19 @@ def _split_data(input_):
                     i1 = inpt.rfind(tp)
                     i2 = inpt.find(ss)
                     part = inpt[i1:i2]
-                    while ' ' in part:
-                        part = part.replace(' ', '')
-                    if part[-2:].lower() == 'u=':
-                        tpe = 'u'
+                    while " " in part:
+                        part = part.replace(" ", "")
+                    if part[-2:].lower() == "u=":
+                        tpe = "u"
                 inpt = inpt.replace(ss, tp, 1)
                 vals.append((int(ss), tpe))
                 fmts.append(fmt_d(ss))
-    elif t[0][:5].lower() == 'fmesh' and t[0][5].isdigit():
+    elif t[0][:5].lower() == "fmesh" and t[0][5].isdigit():
         # fmesh card
-        dtype = 'fmesh'
+        dtype = "fmesh"
         ns = _get_int(t[0])  # tally number
         inpt = inpt.replace(ns, tp, 1)
-        vals.append((int(ns), 'tal'))
+        vals.append((int(ns), "tal"))
         fmts.append(fmt_d(ns))
     else:
         dtype = None
@@ -1107,7 +1099,7 @@ def _split_data(input_):
     for f in fmts:
         inpt = inpt.replace(tp, f, 1)
 
-    return inpt.split('\n'), vals, dtype
+    return inpt.split("\n"), vals, dtype
 
 
 def is_commented(l):
@@ -1118,7 +1110,7 @@ def is_commented(l):
 
     # remove newline chars at the end of l:
     l = l.splitlines()[0]
-    if 'c ' in l[0:6].lstrip().lower() or l.lower() == 'c':
+    if "c " in l[0:6].lstrip().lower() or l.lower() == "c":
         res = True
         # print 'is_com "c"',
     # print 'is_com', res
@@ -1129,76 +1121,32 @@ def is_fc_card(l):
     """
     Return true, if line l is tally comment cards, fcN
     """
-    return l.lstrip().lower()[:2] == 'fc'
+    return l.lstrip().lower()[:2] == "fc"
 
 
 def is_blankline(l):
     """
     Return True, if l is the delimiter blank line.
     """
-    return l.strip() == ''
-
-if six.PY2:
-    def get_cards(inp, debug=None, preservetabs=False):
-        """
-        Check first existence of a dump file
-
-        If dump exists and it is newwer than the input file, read the dump file
-        """
-        from os import stat
-        iname = inp
-        dname = f'.{os.path.basename(inp)}.~'
-        try:
-            it = stat(iname).st_mtime
-        except OSError as e:
-            raise e
-
-        try:
-            dt = stat(dname).st_mtime
-        except OSError:
-            # print('No dump file exists')
-            dt = it - 1.0
-        if it < dt and debug is None:
-            # print('Reading from dump')
-            # dump is youger
-            dfile = open(dname)
-            cl = cPickle.load(dfile)
-            for c in cl:
-                yield c
-        else:
-            # print('Reading from input')
-            cl = []
-            for c in get_cards_from_input(inp, debug=debug, preservetabs=preservetabs):
-                yield c
-                cl.append(c)
-        if debug is None:
-            # otherwise the instances of c contain the file object, which
-            # cannot be dumped.
-            dfile = open(dname, 'w')
-            cPickle.dump(cl, dfile)
-else:
-    def get_cards(inp, debug=None, preservetabs=False):
-        """
-        Check first existence of a dump file
-
-        If dump exists and it is newwer than the input file, read the dump file
-        """
-        iname = inp
-        for c in get_cards_from_input(inp, debug=debug, preservetabs=preservetabs):
-            yield c
+    return l.strip() == ""
 
 
-def index_(line, chars='$&'):
+def get_cards(inp, debug=None, preservetabs=False):
+    """
+    Check first existence of a dump file
+
+    If dump exists and it is newwer than the input file, read the dump file
+    """
+    yield from get_cards_from_input(inp, debug=debug, preservetabs=preservetabs)
+
+
+def index_(line, chars="$&"):
     """
     Find the first index of one of the chars in line.
     """
-    r = re.compile(f'[{chars}]')
+    r = re.compile(f"[{chars}]")
     m = r.search(line)
-    if m:
-        i = m.end() - 1
-    else:
-        i = len(line) - 1
-    return i
+    return m.end() - 1 if m else len(line) - 1
 
 
 def load_decode_buffer(filename):
@@ -1209,20 +1157,18 @@ def load_decode_buffer(filename):
     """
     # detect encoding input deck
     detector = UniversalDetector()
-    with open(filename, 'rb') as finp:
+    with Path(filename).open("rb") as finp:
         for row in finp:
             detector.feed(row)
             if detector.done:
                 break
     detector.close()
-    inpencoding = detector.result['encoding']
+    inpencoding = detector.result["encoding"]
 
     # bufferize input deck in memory while decoding
     # replace unknown characters found with hexadecimal Unicode backslashed escape sequences
-    with open(filename, mode='rb') as finp:
-        textbuffer = StringIO(finp.read().decode(inpencoding, errors='backslashreplace'))
-
-    return textbuffer
+    with Path(filename).open(mode="rb") as finp:
+        return StringIO(finp.read().decode(inpencoding, errors="backslashreplace"))
 
 
 def get_cards_from_input(inp, debug=None, preservetabs=False):
@@ -1243,11 +1189,11 @@ def get_cards_from_input(inp, debug=None, preservetabs=False):
         """
         if preserve:
             return l[:]
-        while '\t' in l:
-            i = l.index('\t')
+        while "\t" in l:
+            i = l.index("\t")
             ii = (i // ts + 1) * ts - i
             # print("c Line {}: tab replaced with {} spaces".format(cln + 1, ii))
-            l = l[:i] + ' '*ii + l[i+1:]
+            l = l[:i] + " " * ii + l[i + 1 :]
         return l[:]
 
     # load input deck file inside a string buffer
@@ -1265,19 +1211,19 @@ def get_cards_from_input(inp, debug=None, preservetabs=False):
     cln += 1
     # kw = l.lower().split()[0]
     kw = l.lstrip()
-    if kw[:8].lower() == 'message:':
+    if kw[:8].lower() == "message:":
         # read message block right here
         res = []
         while not is_blankline(l):
             res.append(l)
             l = replace_tab(next(f), cln, preserve=preservetabs)
             cln += 1
-        yield _yield(res, CID.message, cln-1)  # message card
-        yield _yield(l, CID.blankline, cln)      # blank line
+        yield _yield(res, CID.message, cln - 1)  # message card
+        yield _yield(l, CID.blankline, cln)  # blank line
         l = replace_tab(next(f), cln, preserve=preservetabs)
         cln += 1
         ncid = CID.title
-    elif kw[:8].lower() == 'continue':
+    elif kw[:8].lower() == "continue":
         # input file for continue job. Contains only data block.
         ncid = CID.data
     else:
@@ -1328,13 +1274,13 @@ def get_cards_from_input(inp, debug=None, preservetabs=False):
             card = []
             if ncid == 6:
                 break
-        elif l[0:5] == '     ' or cf:
+        elif l[0:5] == "     " or cf:
             # l is continuation line.
             if cmnt:
                 card += cmnt  # prev. comment lines belong to this card.
                 cmnt = []
             card.append(l)
-            cf = l[:index_(l)].find('&', 0, 81) > -1
+            cf = l[: index_(l)].find("&", 0, 81) > -1
         elif is_commented(l):
             # l is a line comment. Where it belongs (to the current card or
             # to the next one), depends on the next line, therefore, just
@@ -1351,7 +1297,7 @@ def get_cards_from_input(inp, debug=None, preservetabs=False):
             card = [l]
             # if tally comment card, i.e. started with fc, the & character
             # does not mean continuation.
-            cf = not is_fc_card(l) and l[:index_(l)].find('&', 0, 81) > -1
+            cf = not is_fc_card(l) and l[: index_(l)].find("&", 0, 81) > -1
     if card:
         yield _yield(card, ncid, cln - len(card) - len(cmnt))
     if cmnt:
@@ -1365,7 +1311,7 @@ def get_blocks(cards):
 
     d = {}
     cbt = None  # current block type
-    cbc = []    # current block cards
+    cbc = []  # current block cards
     for c in cards:
         if c.ctype == CID.blankline:
             d[cbt] = cbc
@@ -1382,27 +1328,29 @@ def get_blocks(cards):
     return d
 
 
-def are_close_vals(x, y, re=1e-6, ra=0.):
+def are_close_vals(x, y, re=1e-6, ra=0.0):
     """
     Return True if x and y are closer then re or ra.
     """
     if abs(x - y) <= ra:
         r = True
     elif x != 0:
-        r = abs((x - y)/x) <= re
+        r = abs((x - y) / x) <= re
     else:
         # y is not equal to x and x is 0 -> y is not 0.
-        r = abs((x - y)/y) <= re
+        r = abs((x - y) / y) <= re
     return r
 
 
-def are_close_lists(x, y, re=1e-6, pci=[]):
+def are_close_lists(x, y, re=1e-6, pci=None):
     """
     Return True if x and y are close but not equal.
     """
+    if pci is None:
+        pci = []
     if len(x) != len(y):
         res = False
-        msg = 'Different length'
+        msg = "Different length"
 
     if x == y:
         return True
@@ -1419,13 +1367,13 @@ def are_close_lists(x, y, re=1e-6, pci=[]):
     else:
         if len(pci) % 2 == 1:
             # augment with len(x) +1
-            pci = tuple(pci) + (len(x) + 1, )
+            pci = (*tuple(pci), len(x) + 1)
         xe = []
         ye = []
         xp = []
         yp = []
         i = 0
-        for i1, i2 in zip(pci[0::2], pci[1::2]):
+        for i1, i2 in zip(pci[0::2], pci[1::2], strict=False):
             xe += x[i:i1]
             ye += y[i:i1]
             xp += x[i1:i2]
@@ -1436,24 +1384,24 @@ def are_close_lists(x, y, re=1e-6, pci=[]):
     xpn = sum([e**2 for e in xp])
     ypn = sum([e**2 for e in yp])
     if xpn > 0 and ypn > 0:
-        yp = [e*xpn/ypn for e in yp]
+        yp = [e * xpn / ypn for e in yp]
 
     msg = []
     res = []
-    for xl, yl in zip([xe, xp], [ye, yp]):
+    for xl, yl in zip([xe, xp], [ye, yp], strict=False):
         # compare xl and yl without normalization
         if xl == yl:
             res.append(True)
-            msg.append('exact match')
+            msg.append("exact match")
         else:
             n = 0
-            for xx, yy in zip(xl, yl):
+            for xx, yy in zip(xl, yl, strict=False):
                 r = are_close_vals(xx, yy, re)
                 if not r:
-                    m = f'diff at {n}'
+                    m = f"diff at {n}"
                     break
             else:
-                m = 'all elements are close or equal'
+                m = "all elements are close or equal"
                 r = True
             res.append(r)
             msg.append(m)
@@ -1465,7 +1413,3 @@ def are_close_lists(x, y, re=1e-6, pci=[]):
     else:
         result = True
     return result
-
-
-if __name__ == '__main__':
-    pass
