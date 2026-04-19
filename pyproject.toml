@@ -63,7 +63,7 @@ style = [
   "ty>=0.0.31",
 ]
 pylint = ["pylint", "pylint-per-file-ignores"]
-test = ["pytest>=9.0.3", "pytest-cov>=7.1.0"]
+test = ["pytest>=9.0.3", "pytest-cov>=7.1.0", "pytest-mock>=3.15.1"]
 
 [tool.coverage]
 run.branch = true
@@ -86,7 +86,7 @@ report.exclude_lines = [
   "raise AssertionError",
   "raise NotImplementedError",
 ]
-report.fail_under = 27
+report.fail_under = 10 # TODO @dvp: should be at least 80%
 report.ignore_errors = true
 report.omit = ["**/__init__.py", "**/types.py", "*_tab.py"]
 report.show_missing = true

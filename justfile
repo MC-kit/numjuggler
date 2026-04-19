@@ -27,6 +27,10 @@ export JUST_LOG := log
 @_default:
   just --list
 
+[group: 'dev']
+@version:
+  uv run --with setuptools_scm python -m setuptools_scm 
+
 # create venv, if not exists
 [group: 'dev']
 @venv:
