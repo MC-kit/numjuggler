@@ -1,7 +1,7 @@
 # Python setup folders
 build/
 *.egg-info
-numjuggler/version.py
+src/numjuggler/version.py
 
 # Byte-compiled
 *.pyc
@@ -32,3 +32,4 @@ travis_tests/*.res
 
 # vs code
 settings.json
+
