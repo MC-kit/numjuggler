@@ -195,12 +195,12 @@ export JUST_LOG := log
 # @rstcheck:
 #   uv run --no-dev --group docs rstcheck --recursive *.rst docs
 #
-# # build documentation
-# [group: 'docs']
-# @docs-build: rstcheck
-#   uv run --no-dev --group docs sphinx-build docs/source docs/_build
-#
-# # browse and edit documentation with auto build
-# [group: 'docs']
-# @docs:
-#   uv run --no-dev --group docs --group docs sphinx-autobuild --open-browser docs/source docs/_build
+# build documentation
+[group: 'docs']
+@docs-build *args:
+  uv run --no-dev --group docs mkdocs build -d .docs-build --theme readthedocs {{args}}
+
+# browse and edit documentation with auto build
+[group: 'docs']
+@docs:
+  uv run --no-dev --group docs mkdocs  serve --dirty --watch docs --theme readthedocs
