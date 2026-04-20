@@ -11,20 +11,9 @@ import warnings
 
 from io import StringIO
 
-import six
-
 from chardet import UniversalDetector
 
 from numjuggler.utils import PartialFormatter
-
-try:
-    # This clause define the fallback for cPickle, which is an accelerated
-    # version of pickle in Python2. In Python3 the acceleration is considered
-    # to be package-internal details, therefore the whole clause is an overkill
-    # -- an accelerated version will be imported with pickle, if available.
-    import cPickle
-except ImportError:
-    import pickle as cPickle
 
 # integer with one prefix character
 re_int = re.compile(r"\D{0,1}\d+")
@@ -1146,7 +1135,7 @@ def index_(line, chars="$&"):
     """
     r = re.compile(f"[{chars}]")
     m = r.search(line)
-    return m.end() - 1 if m else len(line) - 1
+    return m.end() - 1 if m else len(line)
 
 
 def load_decode_buffer(filename):

@@ -35,6 +35,7 @@ export JUST_LOG := log
 [group: 'dev']
 @venv:
   [ -d .venv ] || uv venv --python {{default_python}}
+  direnv allow
 
 # build package
 [group: 'dev']
@@ -62,7 +63,7 @@ export JUST_LOG := log
       "_build"
       "build"
       "dist"
-      "docs/_build"
+      ".docs-build"
       "htmlcov"
   )
   for d in "${dirs_to_clean[@]}"; do
