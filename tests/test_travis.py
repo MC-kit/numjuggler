@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import difflib
 import sys
-import sysconfig
 
 from pathlib import Path
 import shutil
@@ -71,7 +70,20 @@ def test_cdens(cd_tmpdir, capsys, inp, map_):
 merge_data = Path(data / "merge")
 
 
-@pytest.mark.parametrize("inp,merged", [("inp", "merged")])
+@pytest.mark.parametrize(
+    "inp,merged",
+    [
+        pytest.param(
+            "inp",
+            "merged",
+            marks=pytest.mark.xfail(
+                sys.platform == "win32",
+                reason='...inp1.inp\\r"',
+                # numjuggler parser leaves <CR> character at the end of title before double quote
+            ),
+        )
+    ],
+)
 def test_merge(cd_tmpdir, capsys, inp, merged):
     inp2_path = merge_data / (inp + "2.inp")
     inp1_path = merge_data / (inp + "1.inp")
