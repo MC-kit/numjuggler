@@ -41,14 +41,14 @@ assert data.exists(), "Cannot access test data 'travis' files"
         ),
     ],
 )
-def test_travis(cd_tmpdir, capsys, mode, options, inp):
+def test_mode_options_inp(cd_tmpdir, capsys, mode, options, inp):
     subdir = data / mode
     source = subdir / (inp + ".i")
     wrk_file = shutil.copy(source, cd_tmpdir)
-    ref_path = subdir / (inp + ".ref")
     command = ["--mode", mode, *options.split(), wrk_file]
     main(command)
     out, _ = capsys.readouterr()
+    ref_path = subdir / (inp + ".ref")
     _assert_equal(out, ref_path)
 
 
@@ -61,10 +61,10 @@ def test_cdens(cd_tmpdir, capsys, inp, map_):
     source = cdense_data / (inp + ".i")
     wrk_file = shutil.copy(source, cd_tmpdir)
     wrk_map = shutil.copy(cdense_data / map_, cd_tmpdir)
-    ref_path = cdense_data / f"{inp}.{map_}.ref"
     command = ["--mode", "cdens", "--map", wrk_map, wrk_file]
     main(command)
     out, _ = capsys.readouterr()
+    ref_path = cdense_data / f"{inp}.{map_}.ref"
     _assert_equal(out, ref_path)
 
 
@@ -77,10 +77,10 @@ def test_merge(cd_tmpdir, capsys, inp, merged):
     inp1_path = merge_data / (inp + "1.inp")
     wrk_inp2 = shutil.copy(inp2_path, cd_tmpdir)
     wrk_inp1 = shutil.copy(inp1_path, cd_tmpdir)
-    ref_path = merge_data / f"{merged}.{inp}.ref"
     command = ["--mode", "merge", "-m", wrk_inp2, wrk_inp1]
     main(command)
     out, _ = capsys.readouterr()
+    ref_path = merge_data / f"{merged}.{inp}.ref"
     _assert_equal(out, ref_path)
 
 
@@ -91,5 +91,5 @@ def _assert_equal(out: str, ref_path: Path) -> None:
         return "\n".join(difflib.Differ().compare([o], [r]))
 
     with ref_path.open(encoding="utf8") as f:
-        for i, (o, r) in enumerate(zip(out.split("\n"), f.readlines())):
+        for i, (o, r) in enumerate(zip(out.split("\n"), filter(lambda s: s, f.readlines()))):
             assert o.strip() == r.strip(), f"{name}:{i + 1} {report(o, r)}"
