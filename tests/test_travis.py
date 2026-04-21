@@ -86,8 +86,10 @@ def test_merge(cd_tmpdir, capsys, inp, merged):
 
 def _assert_equal(out: str, ref_path: Path) -> None:
     name = ref_path.name
+
+    def report(o: str, r: str) -> str:
+        return "\n".join(difflib.Differ().compare([o], [r]))
+
     with ref_path.open(encoding="utf8") as f:
         for i, (o, r) in enumerate(zip(out.split("\n"), f.readlines())):
-            assert o.strip() == r.strip(), (
-                f"{name}:{i + 1} {'\n'.join(difflib.Differ().compare([o], [r]))}"
-            )
+            assert o.strip() == r.strip(), f"{name}:{i + 1} {report(o, r)}"
