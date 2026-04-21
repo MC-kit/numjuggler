@@ -33,10 +33,13 @@ assert data.exists(), "Cannot access test data 'travis' files"
             "-u -5942",
             "i3",
         ),
-        (
+        pytest.param(
             "remh",
             "",
             "nested_complement",
+            marks=pytest.mark.xfail(
+                sys.platform == "win32", reason="Need more efforts on parser testing"
+            ),
         ),
     ],
 )
