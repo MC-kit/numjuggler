@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import platform
-
 from pathlib import Path
 import shutil
 
@@ -10,7 +8,7 @@ import pytest
 from numjuggler.main import main
 
 
-HERE = Path(__file__).parent
+HERE = Path(__file__).parent.absolute()
 data = HERE / "data/travis_tests"
 assert data.exists(), "Cannot access test data 'travis' files"
 
@@ -44,18 +42,11 @@ def test_travis(cd_tmpdir, capsys, mode, options, inp):
     subdir = data / mode
     source = subdir / (inp + ".i")
     wrk_file = shutil.copy(source, cd_tmpdir)
-    expected = fix_cr(subdir / (inp + ".ref"))
+    expected = _load(subdir / (inp + ".ref"))
     command = ["--mode", mode, *options.split(), wrk_file]
     main(command)
     out, _ = capsys.readouterr()
     assert out == expected
-
-
-def fix_cr(path):
-    expected = path.read_text()
-    if platform.system() == "Windows":
-        expected = expected.replace("\r", "")
-    return expected
 
 
 cdense_data = Path(data / "cdens")
@@ -67,7 +58,7 @@ def test_cdens(cd_tmpdir, capsys, inp, map_):
     source = cdense_data / (inp + ".i")
     wrk_file = shutil.copy(source, cd_tmpdir)
     wrk_map = shutil.copy(cdense_data / map_, cd_tmpdir)
-    expected = fix_cr(cdense_data / f"{inp}.{map_}.ref")
+    expected = _load(cdense_data / f"{inp}.{map_}.ref")
     command = ["--mode", "cdens", "--map", wrk_map, wrk_file]
     main(command)
     out, _ = capsys.readouterr()
@@ -83,8 +74,12 @@ def test_merge(cd_tmpdir, capsys, inp, merged):
     inp1_path = merge_data / (inp + "1.inp")
     wrk_inp2 = shutil.copy(inp2_path, cd_tmpdir)
     wrk_inp1 = shutil.copy(inp1_path, cd_tmpdir)
-    expected = fix_cr(merge_data / f"{merged}.{inp}.ref")
+    expected = _load(merge_data / f"{merged}.{inp}.ref")
     command = ["--mode", "merge", "-m", wrk_inp2, wrk_inp1]
     main(command)
     out, _ = capsys.readouterr()
     assert out == expected
+
+
+def _load(path: Path):
+    return path.read_text(encoding="utf8")

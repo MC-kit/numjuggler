@@ -25,11 +25,8 @@ def resolve_fname_or_stream(fname_or_stream, mode="r"):
             yield sys.stdin
         else:
             yield sys.stdout
-    elif (
-        (is_input
-        and hasattr(fname_or_stream, "read"))
-        or (not is_input
-        and hasattr(fname_or_stream, "write"))
+    elif (is_input and hasattr(fname_or_stream, "read")) or (
+        not is_input and hasattr(fname_or_stream, "write")
     ):
         yield fname_or_stream
     else:
