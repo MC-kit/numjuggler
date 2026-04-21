@@ -5,9 +5,9 @@ requires = ['setuptools>=42', 'wheel', 'setuptools_scm[toml]>=3.4']
 name = "numjuggler"
 dynamic = ["version"]
 description = "MCNP input file renumbering tool"
-readme = "README.rst"
+readme = "README.md"
 keywords = ["MCNP", "ITER", "PARSER", "RENUMBER"]
-license = { text = "GPLv3" }
+license = "GPL-3.0-or-later"
 authors = [{ name = "A.Travleev", email = "anton.travleev@gmail.com" }]
 requires-python = ">=3.11"
 classifiers = [
@@ -16,7 +16,6 @@ classifiers = [
   "Intended Audience :: Developers",
   "Intended Audience :: Science/Research",
   "Intended Audience :: Eduation",
-  "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.11",
@@ -86,7 +85,7 @@ report.exclude_lines = [
   "raise AssertionError",
   "raise NotImplementedError",
 ]
-report.fail_under = 10 # TODO @dvp: should be at least 80%
+report.fail_under = 30 # TODO @dvp: should be at least 80%
 report.ignore_errors = true
 report.omit = ["**/__init__.py", "**/types.py", "*_tab.py"]
 report.show_missing = true
