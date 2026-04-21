@@ -27,9 +27,9 @@ numjuggler.sfood2
 .coverage
 htmlcov/
 
-# Travis tests
-travis_tests/*.diff
-travis_tests/*.res
+# pyreverse
+*_numjuggler.puml
+*_numjuggler.html
 
 # docs
 site 
