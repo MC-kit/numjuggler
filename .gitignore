@@ -32,8 +32,7 @@ travis_tests/*.diff
 travis_tests/*.res
 
 # docs
-site
+site 
+.docs-build
 
-# vs code
-settings.json
 
