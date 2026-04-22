@@ -1,24 +1,35 @@
 from __future__ import annotations
 
-import os
+from typing import Generator, TextIO, TYPE_CHECKING
+
+
 import sys
 
 from contextlib import contextmanager
 from pathlib import Path
 
-
-@contextmanager
-def cd_temporarily(cd_to):
-    cur_dir = str(Path.cwd())
-    try:
-        os.chdir(str(cd_to))
-        yield
-    finally:
-        os.chdir(cur_dir)
+if TYPE_CHECKING:
+    from os import PathLike
 
 
 @contextmanager
-def resolve_fname_or_stream(fname_or_stream, mode="r"):
+def resolve_fname_or_stream(
+    fname_or_stream: PathLike | str | TextIO | None, mode: str = "r"
+) -> Generator[TextIO, None, None]:
+    """Open stream by name or pass as if it's already opened.
+
+    Parameters
+    ----------
+    fname_or_stream
+        file name or handle or Path to open, if None use std stream
+    mode
+        opening mode (as in Path)
+
+    Returns
+    -------
+    Context with opened stream
+    """
+
     is_input = mode == "r"
     if fname_or_stream is None:
         if is_input:

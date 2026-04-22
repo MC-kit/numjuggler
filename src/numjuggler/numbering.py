@@ -1,9 +1,12 @@
 """
 Functions to renumber cells, surfaces, etc. in MCNP input file.
 """
+
 from __future__ import annotations
 
 import collections
+from pathlib import Path
+from typing import Callable
 import warnings
 
 
@@ -11,6 +14,7 @@ class _Range:
     """
     Represents a range or a point.
     """
+
     def __init__(self, n1, n2=None):
         if n2 is None:
             self.n1 = n1
@@ -23,12 +27,22 @@ class _Range:
     def __contains__(self, value):
         if self.n2 is None:
             return value == self.n1
-        return (self.n1 <= value <= self.n2)
+        return self.n1 <= value <= self.n2
 
     def __str__(self):
         if self.n2 is None:
             return str(self.n1)
-        return f'[{self.n1} -- {self.n2}]'
+        return f"[{self.n1} -- {self.n2}]"
+
+
+MappingFunc = Callable[[int], int]
+MappingItem = int | MappingFunc
+MappingTuple = tuple[int, int, MappingFunc]
+MappingTrivialMap = dict[int, int]
+MappingResolutionList = list[MappingTuple] | MappingTrivialMap
+MappingSpec = tuple[MappingItem, MappingResolutionList]
+MappingDict = dict[str, MappingSpec]
+
 
 class LikeFunction:
     """
@@ -47,7 +61,7 @@ class LikeFunction:
         > d['c'] = [dn0, rl]
 
     where dn0 is an integer or callable, and rl is a list of tuples
-    representing ranges and mappring on this range, or a dictionary representing
+    representing ranges and mapping on this range, or a dictionary representing
     mapping of separate values. In case rl is a list, its form is:
 
         > rl = [(n1, m1, dn1), (n1, m2, dn2), ...]
@@ -67,31 +81,31 @@ class LikeFunction:
     callable, the mapping n -> dni(n) is applied.
 
     """
-    def __init__(self, pdict, log=False):
-        self.__p = pdict
-        self.__lf = log   # flag to log or not.
-        self.__ld = {}    # here log is written, if log.
 
+    def __init__(self, pdict: MappingDict, log: bool = False):
+        self.__p = pdict
+        self.__lf = log  # flag to log or not.
+        self.__ld = {}  # here log is written, if log.
 
     @staticmethod
-    def __applyD(f, n):
+    def __applyD(f: MappingItem, n: int) -> MappingItem:
         if isinstance(f, collections.Callable):
             return f(n)
         return f
 
     @staticmethod
-    def __applyL(f, n):
+    def __applyL(f: MappingItem, n: int) -> int:
         if isinstance(f, collections.Callable):
             return f(n)
         return n + int(f)
 
-    def __get_mapping(self, t):
+    def __get_mapping(self, t: str) -> MappingSpec:
         for key in [t, t[0]]:
             if key in self.__p:
                 return self.__p[key]
         return None, None
 
-    def __call__(self, n, t):
+    def __call__(self, n: int, t: str) -> int:
         dn0, param = self.__get_mapping(t)
         if (dn0, param) == (None, None):
             # type not found. Do not apply any mapping
@@ -116,15 +130,15 @@ class LikeFunction:
             k = (t, nnew)
             if k in ld:
                 if ld[k] != n:
-                    warnings.warn('Non-injective mapping. '
-                                  '({}, {}) and ({}, {}) '
-                                  f'are mapped to {t}')
+                    warnings.warn(
+                        f"Non-injective mapping. ({{}}, {{}}) and ({{}}, {{}}) are mapped to {t}"
+                    )
             else:
                 ld[k] = n
         # check that void material not changed:
-        if t[0].lower() == 'm' and n == 0 and nnew != 0:
-            print(f'WARNING: material {n} replaced with {nnew}.')
-            print('Add cell density to the resulting input file.')
+        if t[0].lower() == "m" and n == 0 and nnew != 0:
+            print(f"WARNING: material {n} replaced with {nnew}.")
+            print("Add cell density to the resulting input file.")
         return nnew
 
     def write_log_as_map(self, fname):
@@ -132,18 +146,18 @@ class LikeFunction:
         Writes log to fname in format of map file.
         """
         d = {}
-        for t in 'csmut':
+        for t in "csmut":
             d[t] = {}
         for (t, nnew), n in list(self.__ld.items()):
             d[t[0]][n] = nnew
 
-        with open(fname, 'w') as f:
-            for t in 'csmut':
-                print('-'*80, file=f)
+        with open(fname, "w") as f:
+            for t in "csmut":
+                print("-" * 80, file=f)
                 for n in sorted(d[t].keys()):
                     nnew = d[t][n]
                     if nnew != n:
-                        print(f'{t} {nnew:>6d}:   {n:>6d}', file=f)
+                        print(f"{t} {nnew:>6d}:   {n:>6d}", file=f)
 
 
 def get_numbers(scards):
@@ -189,16 +203,16 @@ def get_indices(scards):
 
 def _get_ranges_from_set(nn):
     nnl = sorted(nn)
-    if nnl:                         # nnl can be empty
+    if nnl:  # nnl can be empty
         if [e for e in nn if not isinstance(e, int)]:
             # for float elements of nn only one range, (min, max), is returned
             yield (nnl[0], nnl[-1])
         else:
             n1 = nnl.pop(0)  # start of 1-st range
-            np = n1          # previous item
+            np = n1  # previous item
             while nnl:
                 n = nnl.pop(0)
-                if np in [n-1, n]:
+                if np in [n - 1, n]:
                     # range is continued
                     np = n
                 else:
@@ -208,7 +222,7 @@ def _get_ranges_from_set(nn):
             yield (n1, np)
 
 
-def read_map_file(fname):
+def read_map_file(fname: str | Path):
     """
     Read map file and return functions to be used for mapping.
 
@@ -220,11 +234,7 @@ def read_map_file(fname):
         c: 50            # default cell offset. If not specified, it is 0.
     """
     # type short names and accepted types:
-    td = {'c': 'cel',
-          's': 'sur',
-          'u': 'u',
-          't': 'tr',
-          'm': 'mat'}
+    td = {"c": "cel", "s": "sur", "u": "u", "t": "tr", "m": "mat"}
 
     d = {}
     for k in list(td.keys()):
@@ -232,7 +242,7 @@ def read_map_file(fname):
     with open(fname) as f:
         for l in f:
             ll = l.lower().lstrip()
-            if ll and ll[0] in list(td.keys()) and ':' in ll:
+            if ll and ll[0] in list(td.keys()) and ":" in ll:
                 t, ranges, s, dn = _parse_map_line(ll)
                 t = td[t]
 
@@ -271,23 +281,23 @@ def read_map_file(fname):
     return d
 
 
-def _parse_map_line(l):
+def _parse_map_line(l: str):
     """
-    For the map lie returns t, list of ranges and dn.
+    For the map line returns t, list of ranges and dn.
     """
     # range type
     t = l[0]
 
-    rs, os = l[1:].split(':')
+    rs, os = l[1:].split(":")
 
     # Allow commas and no spaces in ranges
-    rs = rs.replace('--', ' -- ').replace(', ')
+    rs = rs.replace("--", " -- ").replace(", ")
     # Use only 1-st entry in the map rule
     os = os.split()[0].lstrip()
 
     # Sign and dn
     dn = int(os)
-    if os[0] in '-+':
+    if os[0] in "-+":
         sign = True
     else:
         sign = False
@@ -296,13 +306,13 @@ def _parse_map_line(l):
     return t, ranges, sign, dn
 
 
-def _get_map_ranges(s):
-    tl = (s + ' 0').split()
+def _get_map_ranges(s: str):
+    tl = (s + " 0").split()
 
     v1 = None
     is_range = False
     for t in tl:
-        if t == '--':
+        if t == "--":
             is_range = True
         elif is_range:
             yield v1, int(t)
@@ -312,7 +322,3 @@ def _get_map_ranges(s):
             if v1 is not None:
                 yield v1, v1
             v1 = int(t)
-
-
-if __name__ == '__main__':
-    pass

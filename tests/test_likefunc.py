@@ -1,6 +1,7 @@
+from io import StringIO
+
 import pytest
-from numjuggler.utils.io import cd_temporarily
-from six import StringIO
+
 import numjuggler.likefunc as lf
 
 

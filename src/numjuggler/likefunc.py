@@ -1,19 +1,20 @@
-# -*- conding: utf-8 -*-
-
 """
 New implementation of mapping, where one can specify
 different functions for different ranges and separate values.
 """
+
 from __future__ import annotations
 
 from collections import OrderedDict
 
-from numjuggler.utils.io import resolve_fname_or_stream
+from numjuggler.utils import resolve_fname_or_stream
 
 
 def trivial(x):
     """Trivial function returning its argument."""
     return x
+
+
 # PEP 257: docstring should not be used for function signature. _mydoc
 # attribute must contain function expression, with argument denoted as `x`
 trivial._mydoc = "x"
@@ -23,16 +24,19 @@ def const_func(c):
     """
     Return function f(x) = c.
     """
+
     def f(x):
         return c
-    f._mydoc = f'{c}'
+
+    f._mydoc = f"{c}"
     return f
 
 
 def add_func(c):
     def f(x):
         return x + c
-    f._mydoc = f'x + {c}'
+
+    f._mydoc = f"x + {c}"
     return f
 
 
@@ -88,15 +92,15 @@ class LikeFunctionBase:
 
         res.extend(self._str())
 
-        res.append(f'other -> {self.default._mydoc}')
-        return '\n'.join(res)
+        res.append(f"other -> {self.default._mydoc}")
+        return "\n".join(res)
 
     def write_log_as_map(self, t, fname_or_stream=None):
         if not self.log:
             raise ValueError("Cannon write log for unlogged mapping.")
         with resolve_fname_or_stream(fname_or_stream, "w") as fout:
             for nold, nnew in self.ld.items():
-                print(f'{t} {nnew}: {nold}', file=fout)
+                print(f"{t} {nnew}: {nold}", file=fout)
 
 
 class LikeFunction(LikeFunctionBase):
@@ -106,12 +110,12 @@ class LikeFunction(LikeFunctionBase):
     Mapping information is in self.mappings, which is an OrderedDict of the
     form `range -> function`.
     """
+
     def __init__(self, log=False):
         super().__init__(log)
 
         # OrderedDict of range -> function
         self.mappings = OrderedDict()
-
 
     def get_value(self, x):
         for rng, f in reversed(self.mappings.items()):
@@ -122,7 +126,7 @@ class LikeFunction(LikeFunctionBase):
     def _str(self):
         res = []
         for r, f in self.mappings.items():
-            res.append(f'{r} -> {f._mydoc}')
+            res.append(f"{r} -> {f._mydoc}")
         return res
 
 
@@ -132,6 +136,7 @@ class LikeIndexFunction(LikeFunctionBase):
 
     List to be indexed is in self.vals.
     """
+
     def __init__(self, log=False, i0=1, skip=[], vals=[]):
         super().__init__(log)
 
@@ -182,7 +187,7 @@ class LikeIndexFunction(LikeFunctionBase):
     def _str(self):
         res = []
         for x in self.vals:
-            res.append(f'{x} -> {self.get_value(x)}')
+            res.append(f"{x} -> {self.get_value(x)}")
         return res
 
 
@@ -190,6 +195,7 @@ class Range:
     """
     Represents a range or a point. Should be considered as immutable.
     """
+
     def __init__(self, x1, x2=None):
         if x2 is None:
             self.__x1 = x1
@@ -202,12 +208,12 @@ class Range:
     def __contains__(self, value):
         if self.__x2 is None:
             return value == self.__x1
-        return (self.__x1 <= value <= self.__x2)
+        return self.__x1 <= value <= self.__x2
 
     def __str__(self):
         if self.__x2 is None:
             return str(self.__x1)
-        return f'[{self.__x1} -- {self.__x2}]'
+        return f"[{self.__x1} -- {self.__x2}]"
 
     def __hash__(self):
         return hash((self.__x1, self.__x2))
@@ -218,8 +224,9 @@ class Range:
     def __ne__(self, o):
         return hash(self) != hash(o)
 
+
 # Possible number types:
-ntList = ('cel', 'sur', 'u', 'tr', 'mat')
+ntList = ("cel", "sur", "u", "tr", "mat")
 
 _ntd = dict(map(lambda x: (x[0], x), ntList))
 
@@ -231,7 +238,7 @@ def read_map_file(fname, log=False):
     # Dictionary type -> LikeFunction
     maps = {}
 
-    with resolve_fname_or_stream(fname, 'r') as mapfile:
+    with resolve_fname_or_stream(fname, "r") as mapfile:
         for l in mapfile:
             t, ranges, f = _parse_map_line(l)
             if t is None:
@@ -239,7 +246,7 @@ def read_map_file(fname, log=False):
                 continue
             if t not in maps:
                 m = LikeFunction(log=log)
-                m.doc = f'Mappping for `{t}` from `{fname}`'
+                m.doc = f"Mappping for `{t}` from `{fname}`"
                 maps[t] = m
             m = maps[t]
             for r in ranges:
@@ -255,20 +262,20 @@ def _parse_map_line(l):
     """
     # Prepare line and check if not a comment:
     l = l.lower().lstrip()
-    if not l or l[0] == '#':
+    if not l or l[0] == "#":
         return None, None, None
 
     # Number type
     t = _ntd[l[0]]
 
-    rs, os = l[1:].split(':')
+    rs, os = l[1:].split(":")
 
     # Use only 1-st entry in the map rule
     os = os.split()[0].lstrip()
 
     # Sign and dn
     dn = int(os)
-    sign = os[0] in '+-'
+    sign = os[0] in "+-"
 
     ranges = list(_get_map_ranges(rs))
 
@@ -283,14 +290,14 @@ def _parse_map_line(l):
 def _get_map_ranges(s):
     # don't require from user spaces before and after `--`
     # and allow user commas
-    s = s.replace('--', ' -- ')
-    s = s.replace(',', ' ')
-    tl = (s + ' 0').split()
+    s = s.replace("--", " -- ")
+    s = s.replace(",", " ")
+    tl = (s + " 0").split()
 
     v1 = None
     is_range = False
     for t in tl:
-        if t == '--':
+        if t == "--":
             is_range = True
         elif is_range:
             yield Range(v1, x2=int(t))
@@ -311,13 +318,14 @@ def get_indices(scards, log=False):
     numbers to their indices -- as they appear in the MCNP input file.
     """
     from numjuggler.numbering import get_numbers
+
     # get list of numbers as they appear in input
     d = get_numbers(scards)
 
     res = {}
     for k, l in d.items():
         # do not rename universe 0 and material 0
-        if k in ('u', 'mat'):
+        if k in ("u", "mat"):
             skip = [0]
         else:
             skip = []
@@ -328,11 +336,11 @@ def get_indices(scards, log=False):
     return res
 
 
-if __name__ == '__main__':
-    maps = read_map_file('trial_map.txt', log=True)
+if __name__ == "__main__":
+    maps = read_map_file("trial_map.txt", log=True)
     for t, m in maps.items():
         print(t)
         print(m)
         for x in range(15):
             print(x, m(x))
-        m.write_log_as_map('c')
+        m.write_log_as_map("c")
