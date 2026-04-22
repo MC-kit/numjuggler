@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import difflib
+from io import StringIO
 import sys
 
 from pathlib import Path
 import shutil
+from typing import Iterable, Sequence
 
 import pytest
 
@@ -51,7 +53,7 @@ def test_mode_options_inp(cd_tmpdir, capsys, mode, options, inp):
     main(command)
     out, _ = capsys.readouterr()
     ref_path = subdir / (inp + ".ref")
-    _assert_equal(out, ref_path)
+    _assert_str_path_equal(out, ref_path)
 
 
 cdense_data = Path(data / "cdens")
@@ -67,7 +69,7 @@ def test_cdens(cd_tmpdir, capsys, inp, map_):
     main(command)
     out, _ = capsys.readouterr()
     ref_path = cdense_data / f"{inp}.{map_}.ref"
-    _assert_equal(out, ref_path)
+    _assert_str_path_equal(out, ref_path)
 
 
 merge_data = Path(data / "merge")
@@ -96,15 +98,49 @@ def test_merge(cd_tmpdir, capsys, inp, merged):
     main(command)
     out, _ = capsys.readouterr()
     ref_path = merge_data / f"{merged}.{inp}.ref"
-    _assert_equal(out, ref_path)
+    _assert_str_path_equal(out, ref_path)
 
 
-def _assert_equal(out: str, ref_path: Path) -> None:
-    name = ref_path.name
+def assert_lines_equal(msg_prefix: str, lines_a: list[str], lines_b: list[str]) -> None:
+    diff = list(difflib.Differ().compare(lines_a, lines_b))
+    assert len(diff) == len(lines_a) == len(lines_b), msg_prefix + ":\n" + "".join(diff)
 
-    def report(o: str, r: str) -> str:
-        return "\n".join(difflib.Differ().compare([o], [r]))
 
+@pytest.mark.parametrize(
+    "a, b",
+    [
+        (
+            ["abc\n", "def\n"],
+            ["abc\n", "def\n"],
+        ),
+        (
+            ["abc\n", "def"],
+            ["abc\n", "def"],
+        ),
+    ],
+)
+def test_assert_lines_equal(a, b):
+    assert_lines_equal("xxx", a, b)
+
+
+@pytest.mark.parametrize(
+    "a, b",
+    [
+        (
+            ["abc\n", "def\n"],
+            ["cab\n", "def\n"],
+        ),
+        (
+            ["abc\n", "def"],
+            ["abc\n"],
+        ),
+    ],
+)
+def test_assert_lines_equal_when_not_equal(a, b):
+    with pytest.raises(AssertionError, match="xxx"):
+        assert_lines_equal("xxx", a, b)
+
+
+def _assert_str_path_equal(out: str, ref_path: Path) -> None:
     with ref_path.open(encoding="utf8") as f:
-        for i, (o, r) in enumerate(zip(out.split("\n"), filter(lambda s: s, f.readlines()))):
-            assert o.strip() == r.strip(), f"{name}:{i + 1} {report(o, r)}"
+        assert_lines_equal(ref_path.name, StringIO(out).readlines(), f.readlines())
