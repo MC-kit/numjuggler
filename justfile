@@ -62,11 +62,11 @@ export JUST_LOG := log
         "_build"
         "build"
         "dist"
-        "docs/_build"
         "htmlcov"
     )
     for d in "${dirs_to_clean[@]}"; do
-        find . -type d -wholename "$d" -exec rm -rf {} +
+        echo "Remove $d"
+        find . -type d -name "$d" -exec rm -rf {} +
     done
     coverage erase
     #pyreverse files
