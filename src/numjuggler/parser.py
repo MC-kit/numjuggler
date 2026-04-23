@@ -7,6 +7,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import re
+from typing import Iterable, Literal
 import warnings
 
 from io import StringIO
@@ -93,7 +94,7 @@ class __CIDClass:
     data = 5
 
     @classmethod
-    def get_name(cls, cid):
+    def get_name(cls, cid: str) -> str:
         """
         Return the name of the card type by its index.
         """
@@ -112,7 +113,7 @@ class Card:
     Representation of a card.
     """
 
-    def __init__(self, lines, ctype, pos, debug=None):
+    def __init__(self, lines: list[str], ctype: Literal[1, 2, 3, 4, 5], pos: int, debug=None):
 
         # Original lines, as read from the input file
         self.lines = lines
@@ -151,11 +152,7 @@ class Card:
         self.hidden = {}
 
         # List of (v, t) tuples, where v -- value and t -- its type.
-        self.values = []
-
-        # geometry prefix and suffix
-        # self.geom_prefix = ''
-        # self.geom_suffix = ''
+        self.values: list[tuple[int, str]] = []
 
         # some properties defined on demand
         # cell properties
@@ -487,7 +484,9 @@ class Card:
 
     def get_imp(self, vals=None):
         """
-        Returns importances, if explicitly specified in the cell card.
+        Returns
+        -------
+        importances, if explicitly specified in the cell card.
         """
         if vals is None:
             vals = {}
@@ -688,39 +687,20 @@ class Card:
         self.print_debug("after apply_map", "vi")
 
 
-# def _parse_geom(geom):
-#     """
-#     Parse the geometry part of a cell card.
-#     """
-#     raise NotImplementedError()
-#     t = geom.split()
-#     vals = []
-#     fmts = []
-#
-#     # cell name
-#     js = t.pop(0)
-#     geom = geom.replace(js, tp, 1)
-#     vals.append((int(js), 'cel'))
-#     fmts.append(fmt_d(js))
-#
-#     if 'like' in geom.lower():
-#         # this is like-but syntax
-#         pass
-#     else:
-#         # get material and density.
-#         # Density, if specified in cells card, should be allready hidden
-#         ms = t.pop(0)
-#         if int(ms) == 0:
-#             inpt = inpt.replace(ms, tp+tp , 1)
-#         else:
-#             inpt = inpt.replace(ms, tp, 1)
-#             inpt = inpt.replace('~', '~'+tp, 1)
-#         vals.append((int(ms), 'mat'))
-#         fmts.append(fmt_d(ms))
-#
-#         # placeholder for geometry prefix
-#         vals.append(('', '#gpr'))
-#         fmts.append('{}')
+def get_numbers(scards: list[Card]) -> dict[str, list[int]]:
+    """Collect type->numbers map.
+
+    Returns
+    -------
+    dictionary with card types as keys and list of numbers as values
+    """
+    r = {}
+    for c in scards:
+        for v, t in c.values:
+            if t not in r:
+                r[t] = []
+            r[t].append(v)
+    return r
 
 
 def _split_cell(input_, _self):
@@ -1135,7 +1115,7 @@ def get_cards(inp, debug=None, preservetabs=False):
     """
     Check first existence of a dump file
 
-    If dump exists and it is newwer than the input file, read the dump file
+    If dump exists and it is newer than the input file, read the dump file
     """
     yield from get_cards_from_input(inp, debug=debug, preservetabs=preservetabs)
 
@@ -1171,12 +1151,18 @@ def load_decode_buffer(filename):
         return StringIO(finp.read().decode(inpencoding, errors="backslashreplace"))
 
 
-def get_cards_from_input(inp, debug=None, preservetabs=False):
-    """
+def get_cards_from_input(inp: str, debug=None, preservetabs=False) -> Iterable[Card]:
+    """Load cards from a file.
+
+    Parameters
+    ----------
+    inp
+        the filename.
+
+    Returns
+    -------
     Iterable, return instances of the Card() class representing
     cards in the input file.
-
-    inp -- is the filename.
     """
 
     def _yield(card, ct, ln):

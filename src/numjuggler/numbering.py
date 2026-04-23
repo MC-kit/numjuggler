@@ -160,19 +160,6 @@ class LikeFunction:
                         print(f"{t} {nnew:>6d}:   {n:>6d}", file=f)
 
 
-def get_numbers(scards):
-    """
-    Return dictionary with keys -- number types and values -- list of numbers
-    used in the input file.
-    """
-    r = {}
-    for c in scards:
-        for v, t in c.values:
-            if t not in r:
-                r[t] = []
-            r[t].append(v)
-    return r
-
 
 def get_indices(scards):
     """

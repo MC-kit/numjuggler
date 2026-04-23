@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from collections import OrderedDict
 
+from numjuggler.parser import get_numbers
 from numjuggler.utils import resolve_fname_or_stream
 
 
@@ -317,7 +318,6 @@ def get_indices(scards, log=False):
     The LikeFuncitons describe mapping for cell, surface, material and universe
     numbers to their indices -- as they appear in the MCNP input file.
     """
-    from numjuggler.numbering import get_numbers
 
     # get list of numbers as they appear in input
     d = get_numbers(scards)
