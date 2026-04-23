@@ -4,28 +4,18 @@ Functions for parsing MCNP input files.
 
 from __future__ import annotations
 
-import os
-from pathlib import Path
+from typing import Iterable, Literal, TextIO
+
 import re
-from typing import Iterable, Literal
 import warnings
 
 from io import StringIO
-
-import six
+from pathlib import Path
 
 from chardet import UniversalDetector
 
 from numjuggler.utils import PartialFormatter
 
-try:
-    # This clause define the fallback for cPickle, which is an accelerated
-    # version of pickle in Python2. In Python3 the acceleration is considered
-    # to be package-internal details, therefore the whole clause is an overkill
-    # -- an accelerated version will be imported with pickle, if available.
-    import cPickle
-except ImportError:
-    import pickle as cPickle
 
 # integer with one prefix character
 re_int = re.compile(r"\D{0,1}\d+")
@@ -101,8 +91,8 @@ class __CIDClass:
         for k, v in list(cls.__dict__.items()):
             if "__" not in k and v == cid:
                 return k
-        print("No attribute with name", cid)
-        raise ValueError
+        msg = f"No CID names with value {cid}"
+        raise ValueError(msg)
 
 
 CID = __CIDClass()
@@ -113,7 +103,9 @@ class Card:
     Representation of a card.
     """
 
-    def __init__(self, lines: list[str], ctype: Literal[1, 2, 3, 4, 5], pos: int, debug=None):
+    def __init__(
+        self, lines: list[str], ctype: Literal[1, 2, 3, 4, 5], pos: int, debug: TextIO | None = None
+    ):
 
         # Original lines, as read from the input file
         self.lines = lines
@@ -139,12 +131,12 @@ class Card:
         # template string. Represents the general structure of the card. It is
         # a copy of lines, but meaningful parts are replaced by format
         # specifiers, {}
-        self.template = ""
+        self.template: str = ""
 
         # List of strings represenging meaningful parts of the card. The
         # original multi-line string card is obtained as
         # template.format(*input)
-        self.input = []
+        self.input: list[str] = []
 
         # Dictionary of parts that are removed from input before processing it.
         # For example, repitition syntax (e.g. 5r or 7i) is replaced with '!'
@@ -217,7 +209,7 @@ class Card:
             if "v" in key:
                 print("    values:  ", self.values, file=d)
 
-    def get_input(self, check_bad_chars=False):
+    def get_input(self, check_bad_chars: bool = False) -> None:
         """
         Recompute template, input and hidden attributes from lines
         """
@@ -1120,13 +1112,21 @@ def get_cards(inp, debug=None, preservetabs=False):
     yield from get_cards_from_input(inp, debug=debug, preservetabs=preservetabs)
 
 
-def index_(line, chars="$&"):
+def index_(line: str, chars: str = "$&") -> int:
     """
     Find the first index of one of the chars in line.
     """
     r = re.compile(f"[{chars}]")
     m = r.search(line)
     return m.end() - 1 if m else len(line) - 1
+    # TODO @dvp: the last char is lost here, assumed that this is newline
+    #            but why?
+    # The following fix, breaks some tests, need deep debugging
+    # d = m.end() - 1 if m else len(line) - 1
+    # last_char = line[d]
+    # if not (last_char in chars or last_char.isspace()):
+    #     d += 1
+    # return d
 
 
 def load_decode_buffer(filename):
