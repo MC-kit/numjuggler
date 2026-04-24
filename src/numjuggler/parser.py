@@ -4,6 +4,7 @@ Functions for parsing MCNP input files.
 
 from __future__ import annotations
 
+from numbers import Number
 from typing import Iterable, Literal, TextIO
 
 import re
@@ -474,8 +475,16 @@ class Card:
             self.__f = None
         return self.__f
 
-    def get_imp(self, vals=None):
-        """
+    def get_imp(
+        self, vals: dict[Literal["n", "p", "e"], float] | None = None
+    ) -> dict[Literal["n", "p", "e"], float]:
+        """Get this cell importance values.
+
+        Parameters
+        ----------
+        vals
+            updates for importance values
+
         Returns
         -------
         importances, if explicitly specified in the cell card.
@@ -513,9 +522,8 @@ class Card:
         self.__i = res
         return self.__i
 
-    def remove_fill(self):
-        """
-        Removes the FILL= keyword of a cell card.
+    def remove_fill(self) -> None:
+        """Remove the FILL= keyword and its values from this cell card.
 
         This method must be called after get_values().
         """
@@ -1314,9 +1322,23 @@ def get_blocks(cards):
     return d
 
 
-def are_close_vals(x, y, re=1e-6, ra=0.0):
-    """
-    Return True if x and y are closer then re or ra.
+def are_close_vals(x: Number, y: Number, re: float = 1e-6, ra: float = 0.0) -> bool:
+    """Check if `x` is close to `y`.
+
+    Parameters
+    ----------
+    x
+        some value
+    y
+        the other one
+    re
+        relative error
+    ra
+        absolute error
+
+    Returns
+    -------
+    True if x and y are closer then re or ra.
     """
     if abs(x - y) <= ra:
         r = True
@@ -1328,11 +1350,29 @@ def are_close_vals(x, y, re=1e-6, ra=0.0):
     return r
 
 
-def are_close_lists(x, y, re=1e-6, pci=None):
+def are_close_lists(x: list[Number], y: list[Number], re=1e-6, pci=None) -> bool:
+    """Check if the two lists of numbers are close with given relative error.
+
+    Use, for instance, to compare coefficients of surfaces for equivalence.
+
+    Parameters
+    ----------
+    x
+        the first list
+    y
+        the second
+    re
+        allowed relative errror
+    pci
+        (proportional check index) - list of index ranges that
+        define elements of x and y to be checked for  proportionality only
+
+
+    Returns
+    -------
+    True if x and y are close but not equal.
     """
-    Return True if x and y are close but not equal.
-    """
-    if pci is None:
+    if pci is None:  # TODO @dvp2015: move object creation  below the preliminary check
         pci = []
     if len(x) != len(y):
         res = False
@@ -1359,7 +1399,7 @@ def are_close_lists(x, y, re=1e-6, pci=None):
         xp = []
         yp = []
         i = 0
-        for i1, i2 in zip(pci[0::2], pci[1::2], strict=False):
+        for i1, i2 in zip(pci[0::2], pci[1::2], strict=True):
             xe += x[i:i1]
             ye += y[i:i1]
             xp += x[i1:i2]
@@ -1367,12 +1407,22 @@ def are_close_lists(x, y, re=1e-6, pci=None):
             i = i2
 
     # normalize yp
-    xpn = sum([e**2 for e in xp])
-    ypn = sum([e**2 for e in yp])
-    if xpn > 0 and ypn > 0:
-        yp = [e * xpn / ypn for e in yp]
 
-    msg = []
+    # @dvp2015 changed:
+    # xpn = sum([e**2 for e in xp])
+    # ypn = sum([e**2 for e in yp])
+    # xpn = max(abs(e) for e in xp)
+    # ypn = max(abs(e) for e in yp)
+    # if xpn > 0 and ypn > 0:
+    #     yp = [e * xpn / ypn for e in yp]
+    # to:
+    if xp and yp:
+        xpn = max(abs(e) for e in xp)
+        ypn = max(abs(e) for e in yp)
+        if xpn > 0 and ypn > 0:
+            yp = [e * xpn / ypn for e in yp]
+
+    msg = []  # TODO @dvp2015: remove debugging code: `msg`, `res`
     res = []
     for xl, yl in zip([xe, xp], [ye, yp], strict=False):
         # compare xl and yl without normalization

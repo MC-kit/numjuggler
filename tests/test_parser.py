@@ -2,7 +2,7 @@ from io import StringIO
 
 import pytest
 
-from numjuggler.parser import Card, CID
+from numjuggler.parser import Card, CID, are_close_lists
 
 
 @pytest.fixture
@@ -120,6 +120,60 @@ def test_card_get_f():
     assert card.get_f(300) == 300
     assert card.get_f() == 300
     assert card._get_value_by_type("fill") == 300
+
+
+@pytest.mark.parametrize(
+    "card,vals,expected,msg",
+    [
+        (
+            Card(["1 0 1\n"], 3, 1),
+            None,
+            {"imp:n": 1},
+            "expect `imp:n=1`, if importance is not specified",
+        ),
+        (
+            Card(["1 0 1\n", "      imp:n=2\n"], 3, 1),
+            None,
+            {"imp:n": 2},
+            "expect `imp:n=2`",
+        ),
+    ],
+)
+def test_card_get_imp(card, vals, expected, msg):
+    card.get_values()
+    actual = card.get_imp(vals)
+    assert actual == expected, msg
+
+
+@pytest.mark.parametrize(
+    "card",
+    [
+        Card(["1 0 1\n"], 3, 1),
+        Card(["1 0 1\n", "     fill=100\n"], 3, 1),
+        Card(["1 0 1\n", "     fill 100\n"], 3, 1),
+        Card(["1 0 1\n", "     fill 100 (1)\n"], 3, 1),
+        Card(["1 0 1\n", "     fill 100 (10 10 10)\n"], 3, 1),
+    ],
+)
+def test_card_remove_fill(card):
+    card.get_values()
+    card.remove_fill()
+    card.get_f() is None
+
+
+@pytest.mark.parametrize(
+    "x,y,re,pci,expected",
+    [
+        ([1, 2], [1, 2], 0.0, None, True),
+        ([1, 2], [1, 3], 0.0, None, False),
+        ([1, 2], [1.1, 2], 0.2, None, True),
+        ([1, 2], [1.1, 2], 0.1, None, False),
+        ([1, 2, 3, 100], [2, 4, 6, 100], 0.1, (0,3), True),
+    ],
+)
+def test_are_close_lists(x, y, re, pci, expected):
+    actual = are_close_lists(x, y, re, pci)
+    assert actual == expected
 
 
 @pytest.mark.parametrize(
