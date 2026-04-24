@@ -143,4 +143,9 @@ def test_assert_lines_equal_when_not_equal(a, b):
 
 def _assert_str_path_equal(out: str, ref_path: Path) -> None:
     with ref_path.open(encoding="utf8") as f:
-        assert_lines_equal(ref_path.name, StringIO(out).readlines(), f.readlines())
+        actual = StringIO(out).readlines()
+        expected = f.readlines()
+        if sys.platform == "win32":
+            actual = [s.remove("\r") for s in actual]
+            expected = [s.remove("\r") for s in expected]
+        assert_lines_equal(ref_path.name, actual, expected)
