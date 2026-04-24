@@ -26,8 +26,8 @@ def test_range_class():
     assert "_" not in r
 
 
-@pytest.mark.xfail(reason="obsolete collections.Callable is used")
-@pytest.mark.parametrize("pdict, n, expected", [({"c": [5, [(10, 20, 10)]]}, 1, 5)])
+# @pytest.mark.xfail(reason="obsolete collections.Callable is used")
+@pytest.mark.parametrize("pdict, n, expected", [({"c": [5, [(10, 20, 10)]]}, 1, 1+5)])
 def test_like_function(pdict, n, expected):
     lf = LikeFunction(pdict)
     assert lf(n, "c") == expected

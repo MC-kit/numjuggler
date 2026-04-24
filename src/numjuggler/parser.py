@@ -572,9 +572,17 @@ class Card:
 
         self.print_debug("remove_fill", "iv")
 
-    def card(self, wrap=False, comment=True):
-        """
-        Return multi-line string representing the card.
+    def card(self, wrap: bool = False, comment: bool = True) -> str:
+        """Present this card as text.
+
+        Parameters
+        ----------
+        wrap
+        comment
+
+        Returns
+        -------
+        multi-line string representing the card.
         """
         if self.input:
             # put values back to meaningful parts:
@@ -982,7 +990,7 @@ def _get_int(s):
     return r
 
 
-def _parse_tr(input_):
+def _parse_tr(input_: list[str]) -> tuple[str, list[str], list[tuple[float, str]]]:
     """
     input_ should be already passed through _split_data()
     """
@@ -998,7 +1006,7 @@ def _parse_tr(input_):
     return unit, (inp1 + " " + inp2).split("\n"), fvals
 
 
-def _split_data(input_):
+def _split_data(input_: list[str]) -> tuple[list[str], list[tuple[int, str], str | None]]:
     inpt = "\n".join(input_)
     t = inpt.split()
 
@@ -1137,7 +1145,7 @@ def index_(line: str, chars: str = "$&") -> int:
     # return d
 
 
-def load_decode_buffer(filename):
+def load_decode_buffer(filename: str | Path) -> StringIO:
     """
     Load and decode the text inside an file to a string buffer.
 
@@ -1340,14 +1348,7 @@ def are_close_vals(x: Number, y: Number, re: float = 1e-6, ra: float = 0.0) -> b
     -------
     True if x and y are closer then re or ra.
     """
-    if abs(x - y) <= ra:
-        r = True
-    elif x != 0:
-        r = abs((x - y) / x) <= re
-    else:
-        # y is not equal to x and x is 0 -> y is not 0.
-        r = abs((x - y) / y) <= re
-    return r
+    return True if abs(x - y) <= ra else abs((x - y) / x) <= re if x != 0 else False
 
 
 def are_close_lists(x: list[Number], y: list[Number], re=1e-6, pci=None) -> bool:
@@ -1372,14 +1373,14 @@ def are_close_lists(x: list[Number], y: list[Number], re=1e-6, pci=None) -> bool
     -------
     True if x and y are close but not equal.
     """
-    if pci is None:  # TODO @dvp2015: move object creation  below the preliminary check
-        pci = []
     if len(x) != len(y):
-        res = False
-        msg = "Different length"
+        return False
 
     if x == y:
         return True
+
+    if pci is None:
+        pci = []
 
     # pci -- list of indices that define elements of x and y to be checked for
     # proportionality only.
@@ -1408,7 +1409,7 @@ def are_close_lists(x: list[Number], y: list[Number], re=1e-6, pci=None) -> bool
 
     # normalize yp
 
-    # @dvp2015 changed:
+    # @dvp2015 changed (that was an error in norm presentation):
     # xpn = sum([e**2 for e in xp])
     # ypn = sum([e**2 for e in yp])
     # xpn = max(abs(e) for e in xp)
@@ -1417,35 +1418,17 @@ def are_close_lists(x: list[Number], y: list[Number], re=1e-6, pci=None) -> bool
     #     yp = [e * xpn / ypn for e in yp]
     # to:
     if xp and yp:
-        xpn = max(abs(e) for e in xp)
+        xpn = max(abs(e) for e in xp)  # Let's use LP1 norm for this
         ypn = max(abs(e) for e in yp)
         if xpn > 0 and ypn > 0:
-            yp = [e * xpn / ypn for e in yp]
+            r = xpn / ypn
+            yp = [e * r for e in yp]
 
-    msg = []  # TODO @dvp2015: remove debugging code: `msg`, `res`
-    res = []
     for xl, yl in zip([xe, xp], [ye, yp], strict=False):
         # compare xl and yl without normalization
         if xl == yl:
-            res.append(True)
-            msg.append("exact match")
-        else:
-            n = 0
-            for xx, yy in zip(xl, yl, strict=False):
-                r = are_close_vals(xx, yy, re)
-                if not r:
-                    m = f"diff at {n}"
-                    break
-            else:
-                m = "all elements are close or equal"
-                r = True
-            res.append(r)
-            msg.append(m)
-
-        if not res[-1]:
-            result = False
-            break
-
-    else:
-        result = True
-    return result
+            continue
+        for xx, yy in zip(xl, yl, strict=False):
+            if not are_close_vals(xx, yy, re):
+                return False
+    return True

@@ -4,10 +4,12 @@ Functions to renumber cells, surfaces, etc. in MCNP input file.
 
 from __future__ import annotations
 
-import collections
-from pathlib import Path
-from typing import Callable
+from typing import Callable, TYPE_CHECKING
+
 import warnings
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class _Range:
@@ -89,13 +91,13 @@ class LikeFunction:
 
     @staticmethod
     def __applyD(f: MappingItem, n: int) -> MappingItem:
-        if isinstance(f, collections.Callable):
+        if isinstance(f, Callable):
             return f(n)
         return f
 
     @staticmethod
     def __applyL(f: MappingItem, n: int) -> int:
-        if isinstance(f, collections.Callable):
+        if isinstance(f, Callable):
             return f(n)
         return n + int(f)
 
@@ -158,7 +160,6 @@ class LikeFunction:
                     nnew = d[t][n]
                     if nnew != n:
                         print(f"{t} {nnew:>6d}:   {n:>6d}", file=f)
-
 
 
 def get_indices(scards):

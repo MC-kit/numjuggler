@@ -1,8 +1,13 @@
+from encodings import cp1251
+from enum import unique
 from io import StringIO
+import locale
+from pathlib import Path
+from textwrap import dedent
 
 import pytest
 
-from numjuggler.parser import Card, CID, are_close_lists
+from numjuggler.parser import Card, CID, _split_data, are_close_lists, load_decode_buffer
 
 
 @pytest.fixture
@@ -16,6 +21,27 @@ def card_600177() -> Card:
     card = Card(definition, ctype=3, pos=1, debug=StringIO())
     card.get_values()  # dvp: as in the old test, why not in constructor?
     return card
+
+
+@pytest.mark.parametrize(
+    "value, expected_name",
+    [
+        (-1, "comment"),
+        (-2, "blankline"),
+        (1, "message"),
+        (2, "title"),
+        (3, "cell"),
+        (4, "surface"),
+        (5, "data"),
+    ],
+)
+def test_cid(value, expected_name):
+    assert CID.get_name(value) == expected_name
+
+
+def test_cid_bad_path():
+    with pytest.raises(ValueError, match="No CID names with value 100"):
+        CID.get_name(100)
 
 
 def test_vol_param(card_600177: Card):
@@ -165,10 +191,17 @@ def test_card_remove_fill(card):
     "x,y,re,pci,expected",
     [
         ([1, 2], [1, 2], 0.0, None, True),
+        ([1, 2], [1, 2, 3], 0.0, None, False),
         ([1, 2], [1, 3], 0.0, None, False),
         ([1, 2], [1.1, 2], 0.2, None, True),
         ([1, 2], [1.1, 2], 0.1, None, False),
-        ([1, 2, 3, 100], [2, 4, 6, 100], 0.1, (0,3), True),
+        ([1, 2, 3, 100], [2, 4, 6, 100], 0.1, (0, 3), True),
+        ([0.0, 0.0], [0.0, 1e-7], 1e-6, (0, 2), False),  # comparing to zero is to be absolute
+        ([0.0, 1e-7], [0.0, 0.0], 1e-6, (0, 2), False),
+        ([0.0, 0.0], [0.0, 0.0], 1e-6, (0, 2), True),
+        ([0.0, 1e-7], [0.0, -1e-7], 1e-7, (0, 2), False),
+        ([0.0, 1e-7], [0.0, -1e-7], 2, (0, 2), True),
+        ([], [], 2, None, True),
     ],
 )
 def test_are_close_lists(x, y, re, pci, expected):
@@ -177,21 +210,89 @@ def test_are_close_lists(x, y, re, pci, expected):
 
 
 @pytest.mark.parametrize(
-    "value, expected_name",
+    "card,expected",
     [
-        (-1, "comment"),
-        (-2, "blankline"),
-        (1, "message"),
-        (2, "title"),
-        (3, "cell"),
-        (4, "surface"),
-        (5, "data"),
+        (Card(["1 0 1  \n"], 3, 1), "1 0 1  \n"),
+        (Card(["1 0  1: 2\n"], 3, 1), "1 0 1:2  \n"),
+        (Card(["1 0 ( 1 : 2 ) (3 : 4)\n"], 3, 1), "1 0 (1:2) (3:4)      \n"),
+        # TODO @dvp2015: why we need these trailing spaces in expected?
     ],
 )
-def test_cid(value, expected_name):
-    assert CID.get_name(value) == expected_name
+def test_remove_spaces(card, expected):
+    card.get_values()
+    card.remove_spaces()
+    assert card.card() == expected
 
 
-def test_cid_bad_path():
-    with pytest.raises(ValueError, match="No CID names with value 100"):
-        CID.get_name(100)
+@pytest.mark.parametrize(
+    "card,wrap,expected",
+    [
+        (
+            Card(
+                [
+                    "1 0 100000000000 100000000001 100000000002 100000000003 100000000004"
+                    " 100000000005 100000000006 100000000007 100000000008 \n"
+                ],
+                3,
+                1,
+            ),
+            False,
+            (
+                "1 0 100000000000 100000000001 100000000002 100000000003 100000000004"
+                " 100000000005 100000000006 100000000007 100000000008 \n"
+            ),
+        ),
+        (
+            Card(
+                [
+                    "1 0 100000000000 100000000001 100000000002 100000000003 100000000004"
+                    " 100000000005 100000000006 100000000007 100000000008 \n"
+                ],
+                3,
+                1,
+            ),
+            True,
+            dedent("""
+               1 0 100000000000 100000000001 100000000002 100000000003 100000000004
+                     100000000005 100000000006 100000000007 100000000008
+            """)[1:-1]
+            + " \n",
+        ),
+    ],
+)
+def test_card_wrap(card, wrap, expected):
+    card.get_values()
+    actual = card.card(wrap)
+    assert actual == expected
+
+
+@pytest.mark.parametrize(
+    "encoding",
+    [
+        "utf8",
+        pytest.param(
+            "cp1251", marks=pytest.mark.xfail(reason="encoding auto detection fails on short texts")
+        ),
+        pytest.param(
+            "ascii", marks=pytest.mark.xfail(reason="acsii encoding corrupts any non english text")
+        ),
+    ],
+)
+def test_load_decode_buffer(cd_tmpdir, encoding):
+    text = "Something with Юникод valid for cp1251"
+    path = Path("test.txt")
+    path.write_text(text, encoding=encoding, errors="backslashreplace")
+    actual = load_decode_buffer(path).getvalue()
+    assert actual == text
+
+
+@pytest.mark.parametrize(
+    "inp, expected",
+    [
+        (["1 0 1\n", "   2 3 4\n", "\n", "m1 00101 1\n", "tr1 1 0 0 1\n"], None),
+        (["1 0 1\n", "   2 3 4\n", "\n", "m1 00101 1\n", "tr1\n       0 0 1\n"], None),
+    ],
+)
+def test_split_data(inp, expected):
+    actual = _split_data(inp)
+    assert actual is not None
