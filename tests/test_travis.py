@@ -75,17 +75,15 @@ def test_cdens(cd_tmpdir, capsys, inp, map_):
 merge_data = Path(data / "merge")
 
 
+# TODO @dvp2015: numjuggler parser on Windows leaves <CR> before the closing quote `inp\r"`
+
+
 @pytest.mark.parametrize(
     "inp,merged",
     [
-        pytest.param(
+        (
             "inp",
             "merged",
-            marks=pytest.mark.xfail(
-                sys.platform == "win32",
-                reason='...inp1.inp\\r"',
-                # numjuggler parser leaves <CR> character at the end of title before double quote
-            ),
         )
     ],
 )
