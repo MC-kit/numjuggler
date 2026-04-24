@@ -698,6 +698,7 @@ dev = [
     { name = "pytest-mock" },
     { name = "ruff" },
     { name = "ty" },
+    { name = "xdoctest" },
 ]
 docs = [
     { name = "griffe-public-wildcard-imports" },
@@ -719,9 +720,11 @@ style = [
     { name = "ty" },
 ]
 test = [
+    { name = "pygments" },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "pytest-mock" },
+    { name = "xdoctest" },
 ]
 
 [package.metadata]
@@ -740,6 +743,7 @@ dev = [
     { name = "mkdocstrings", extras = ["python"], specifier = ">=0.29" },
     { name = "pre-commit", specifier = ">=4.5.1" },
     { name = "pygments" },
+    { name = "pygments", specifier = ">=2.20.0" },
     { name = "pylint" },
     { name = "pylint-per-file-ignores" },
     { name = "pytest", specifier = ">=9.0.3" },
@@ -747,6 +751,7 @@ dev = [
     { name = "pytest-mock", specifier = ">=3.15.1" },
     { name = "ruff", specifier = ">=0.15.11" },
     { name = "ty", specifier = ">=0.0.31" },
+    { name = "xdoctest", specifier = ">=1.3.2" },
 ]
 docs = [
     { name = "griffe-public-wildcard-imports" },
@@ -768,9 +773,11 @@ style = [
     { name = "ty", specifier = ">=0.0.31" },
 ]
 test = [
+    { name = "pygments", specifier = ">=2.20.0" },
     { name = "pytest", specifier = ">=9.0.3" },
     { name = "pytest-cov", specifier = ">=7.1.0" },
     { name = "pytest-mock", specifier = ">=3.15.1" },
+    { name = "xdoctest", specifier = ">=1.3.2" },
 ]
 
 [[package]]
@@ -1296,4 +1303,13 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/79/3e/c0bdc27cf06f4e47680bd5803a07cb3dfd17de84cde92dd217dcb9e05253/wcmatch-10.1.tar.gz", hash = "sha256:f11f94208c8c8484a16f4f48638a85d771d9513f4ab3f37595978801cb9465af", size = 117421, upload-time = "2025-06-22T19:14:02.49Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/eb/d8/0d1d2e9d3fabcf5d6840362adcf05f8cf3cd06a73358140c3a97189238ae/wcmatch-10.1-py3-none-any.whl", hash = "sha256:5848ace7dbb0476e5e55ab63c6bbd529745089343427caa5537f230cc01beb8a", size = 39854, upload-time = "2025-06-22T19:14:00.978Z" },
+]
+
+[[package]]
+name = "xdoctest"
+version = "1.3.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/3f/df/1b5751e3546967a4884cff6ea743b1e457d3f7c94fc35913f149a85734fc/xdoctest-1.3.2.tar.gz", hash = "sha256:bf6078c4fc0d60aafd8753fccdc435c95f26a640508e606d188d96f48359f0aa", size = 209923, upload-time = "2026-03-27T01:13:25.275Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/29/1d/6b9cf46122f2f07eab95c4af29ab5e29bd6674147a0b1e9a6d3929870af1/xdoctest-1.3.2-py3-none-any.whl", hash = "sha256:052118c8efb2b4cfb54485d328915b9e7b44da37c64b0998ca6aa21193dcb601", size = 146469, upload-time = "2026-03-27T01:13:23.417Z" },
 ]

@@ -140,10 +140,10 @@ export JUST_LOG := log
 @test *args:
     uv run --no-dev --group test pytest {{ args }}
 
-# # run documentation tests
-# [group: 'test']
-# @xdoctest *args:
-#   uv run --no-dev --group test python -m xdoctest --silent -c all src tools {{args}}
+# run documentation tests
+[group: 'test']
+@xdoctest *args:
+  uv run --no-dev --group test xdoctest --silent -c all src/numjuggler tools {{args}}
 
 # create coverage data
 [group('test')]
