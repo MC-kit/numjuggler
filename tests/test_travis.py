@@ -146,6 +146,6 @@ def _assert_str_path_equal(out: str, ref_path: Path) -> None:
         actual = StringIO(out).readlines()
         expected = f.readlines()
         if sys.platform == "win32":
-            actual = [s.remove("\r") for s in actual]
-            expected = [s.remove("\r") for s in expected]
+            actual = [s.replace("\r", "") for s in actual]
+            expected = [s.replace("\r", "") for s in expected]
         assert_lines_equal(ref_path.name, actual, expected)
