@@ -48,7 +48,7 @@ def test_vol_param(card_600177: Card):
     assert "Vol=1.335972e+01" in card_600177.card()
 
 
-def test_get_set_value(card_600177: Card):
+def test_get_and_set_value(card_600177: Card):
     assert card_600177._get_value_by_type("u") == 5972
     assert card_600177._get_value_by_type("_not_existing") is None
     card_600177._set_value_by_type("u", 30)

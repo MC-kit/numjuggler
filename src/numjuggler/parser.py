@@ -980,7 +980,27 @@ def _split_surface(input_):
     return inpt.split("\n"), vals, st, scoef
 
 
-def _get_int(s):
+def _get_int(s: str) -> str:
+    """Extract digits at the end of a word `s`.
+
+    Example
+    -------
+    >>> _get_int("TR1")
+    '1'
+    >>> _get_int("100")
+    '100'
+    >>> _get_int("m2")
+    '2'
+
+    Parameters
+    ----------
+    s
+        string to parse
+
+    Returns
+    -------
+    str: digits value part
+    """
     r = ""
     for c in s:
         if r and c.isalpha():
@@ -991,8 +1011,29 @@ def _get_int(s):
 
 
 def _parse_tr(input_: list[str]) -> tuple[str, list[str], list[tuple[float, str]]]:
-    """
+    """Parse transformation input.
+
+    Note
+    ----
     input_ should be already passed through _split_data()
+
+    Parameters
+    ----------
+    input
+        text lines to parse
+
+    Returns
+    -------
+    - Rotation units - '*' if in degrees
+    -
+
+    Example
+    -------
+    >>> _parse_tr(["tr1 0 0 1"])
+    ('', ['tr1 {} {} {}'], [(0.0, 'float'), (0.0, 'float'), (1.0, 'float')])
+    >>> _parse_tr(["*tr1 0 0 1"])
+    ('*', ['*tr1 {} {} {}'], [(0.0, 'float'), (0.0, 'float'), (1.0, 'float')])
+
     """
     inpt = "\n".join(input_)
     inp1, inp2 = inpt.split(None, 1)
