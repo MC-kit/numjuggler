@@ -1,13 +1,22 @@
-from encodings import cp1251
-from enum import unique
 from io import StringIO
-import locale
 from pathlib import Path
 from textwrap import dedent
+from typing import Iterable
 
 import pytest
 
-from numjuggler.parser import Card, CID, _split_data, are_close_lists, load_decode_buffer
+from numjuggler.parser import (
+    Card,
+    CID,
+    _split_data,
+    are_close_lists,
+    get_cards_from_input,
+    load_decode_buffer,
+)
+
+HERE = Path(__file__).parent
+DATA = HERE / "data"
+assert DATA.is_dir()
 
 
 @pytest.fixture
@@ -159,16 +168,25 @@ def test_card_get_f():
         ),
         (
             Card(["1 0 1\n", "      imp:n=2\n"], 3, 1),
+            {"n": 3.0},
+            {"imp:n": 3.0},
+            "expect `imp:n=3` with updated value",
+        ),
+        (
+            Card(["1 0 1\n", "      imp:n=2\n"], 3, 1),
             None,
             {"imp:n": 2},
             "expect `imp:n=2`",
         ),
+        (Card(["F4 1\n"], 5, 1), None, None, "expect None for non cell card"),
     ],
 )
 def test_card_get_imp(card, vals, expected, msg):
     card.get_values()
     actual = card.get_imp(vals)
     assert actual == expected, msg
+    actual2 = card.get_imp()
+    assert actual2 is actual, "Should return previously cached value"
 
 
 @pytest.mark.parametrize(
@@ -196,6 +214,7 @@ def test_card_remove_fill(card):
         ([1, 2], [1.1, 2], 0.2, None, True),
         ([1, 2], [1.1, 2], 0.1, None, False),
         ([1, 2, 3, 100], [2, 4, 6, 100], 0.1, (0, 3), True),
+        ([1, 2, 3], [2, 4, 6], 0.1, (0,), True),
         ([0.0, 0.0], [0.0, 1e-7], 1e-6, (0, 2), False),  # comparing to zero is to be absolute
         ([0.0, 1e-7], [0.0, 0.0], 1e-6, (0, 2), False),
         ([0.0, 0.0], [0.0, 0.0], 1e-6, (0, 2), True),
@@ -222,6 +241,18 @@ def test_remove_spaces(card, expected):
     card.get_values()
     card.remove_spaces()
     assert card.card() == expected
+
+
+def test_card_with_like():
+    card = Card(["2 LIKE 1 BUT TRCL 20\n"], 3, 1)
+    card.get_values()
+    assert card.ctype == 3
+
+
+def test_card_with_repetitions():
+    card = Card(["F4 1 3i 5\n"], 5, 1)
+    card.get_values()
+    assert card.ctype == 5
 
 
 @pytest.mark.parametrize(
@@ -288,11 +319,36 @@ def test_load_decode_buffer(cd_tmpdir, encoding):
 
 @pytest.mark.parametrize(
     "inp, expected",
-    [
-        (["1 0 1\n", "   2 3 4\n", "\n", "m1 00101 1\n", "tr1 1 0 0 1\n"], None),
-        (["1 0 1\n", "   2 3 4\n", "\n", "m1 00101 1\n", "tr1\n       0 0 1\n"], None),
+    [  # Note: split_data doesn't need \n at the end of lines
+        (["tr1 0 0 2"], (["tr{:<1} 0 0 2"], [(1, "tr")], "TRn")),
+        (["m1 00101 1"], (["m{:<1} 00101 1"], [(1, "mat")], "Mn")),
+        (["f4 1"], (["f{:<1} {:<1}"], [(4, "tal"), (1, "cel")], "Fn")),
+        (["fmesh1004"], (["fmesh{:<4}"], [(1004, "tal")], "fmesh")),
+        (
+            ["fmesh1004", "     orig 10 10 10"],
+            (["fmesh{:<4}", "     orig 10 10 10"], [(1004, "tal")], "fmesh"),
+        ),
     ],
 )
 def test_split_data(inp, expected):
     actual = _split_data(inp)
-    assert actual is not None
+    assert actual == expected
+
+
+def with_message_validator(cards: Iterable[Card]):
+    first_card: Card = next(cards)
+    assert first_card.ctype == CID.message
+
+
+def continue_validator(cards: Iterable[Card]):
+    first_card: Card = next(cards)
+    assert first_card.ctype == CID.data
+
+
+@pytest.mark.parametrize(
+    "fname, validator",
+    [("with_message.mcnp", with_message_validator), ("continue", continue_validator)],
+)
+def test_get_cards_from_input(fname, validator):
+    actual = get_cards_from_input(DATA / fname)
+    validator(actual)

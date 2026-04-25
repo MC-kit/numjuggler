@@ -4,8 +4,7 @@ Functions for parsing MCNP input files.
 
 from __future__ import annotations
 
-from numbers import Number
-from typing import Iterable, Literal, TextIO
+from typing import Iterable, Literal, TextIO, TYPE_CHECKING
 
 import re
 import warnings
@@ -16,6 +15,9 @@ from pathlib import Path
 from chardet import UniversalDetector
 
 from numjuggler.utils import PartialFormatter
+
+if TYPE_CHECKING:
+    from numbers import Number
 
 
 # integer with one prefix character
@@ -113,15 +115,28 @@ class Card:
     pos
         Input file line number, where the card was found
     debug, optional
-        Optional file-like object to write debug info, by default None
+        File-like object to write debug info (default None)
     cstrg
         True if self.lines has changed after initialization
         used in remove_hash function (default False)
-
-    self.dtype = None
+    dtype
         data card type. Defined from the get_values() method.
         Has sense only to data cards (see ctype).
         For other card types is None.
+    template
+        template string. Represents the general structure of the card. It is
+        a copy of lines, but meaningful parts are replaced by format
+        specifiers, {}
+    input
+        List of strings represenging meaningful parts of the card. The
+        original multi-line string card is obtained as
+        template.format(*input)
+    hidden
+        Dictionary of parts that are removed from input before processing it.
+        For example, repitition syntax (e.g. 5r or 7i) is replaced with '!'
+        to prevent its modification.
+    values
+        List of (value, value_type) tuples
     """
 
     def __init__(
@@ -160,25 +175,25 @@ class Card:
         """Input file line number, where the card was found."""
 
         self.debug = debug
-        """File-like object to write debug info"""
+        """File-like object to write debug ino (optional)"""
 
-        # template string. Represents the general structure of the card. It is
-        # a copy of lines, but meaningful parts are replaced by format
-        # specifiers, {}
         self.template: str = ""
+        """template string. Represents the general structure of the card. It is
+        a copy of lines, but meaningful parts are replaced by format
+        specifiers, {}"""
 
-        # List of strings represenging meaningful parts of the card. The
-        # original multi-line string card is obtained as
-        # template.format(*input)
         self.input: list[str] = []
+        """List of strings represenging meaningful parts of the card. The
+        original multi-line string card is obtained as
+        template.format(*input)"""
 
-        # Dictionary of parts that are removed from input before processing it.
-        # For example, repitition syntax (e.g. 5r or 7i) is replaced with '!'
-        # to prevent its modification.
         self.hidden = {}
+        """Dictionary of parts that are removed from input before processing it.
+        For example, repitition syntax (e.g. 5r or 7i) is replaced with '!'
+        to prevent its modification."""
 
-        # List of (v, t) tuples, where v -- value and t -- its type.
         self.values: list[tuple[int, str]] = []
+        """List of (v, t) tuples, where v -- value and t -- its type."""
 
         # some properties defined on demand
         # cell properties
@@ -320,7 +335,7 @@ class Card:
             d["~"] = []  # float values in cells
 
             # Replace material density
-            if "like" not in inpt:
+            if "like" not in inpt.lower():
                 tokens = inpt.replace("=", " ").split()
                 cell, mat, rho = tokens[:3]
                 if int(mat) != 0:
@@ -539,11 +554,14 @@ class Card:
                 # there is no key in the input line.
                 continue
             n = s[0].count("~")
-            res[key] = float(self.hidden["~"][n])
+            hidden_item = float(self.hidden["~"][n])
+            res[key] = hidden_item
             # change value only if necessary
-            if p in vals and res[key] != vals[p]:
-                res[key] = vals[p]
-                self.hidden["~"][n] = str(vals[p])
+            if vals and p in vals:
+                new_value = vals[p]
+                if hidden_item != new_value:
+                    res[key] = new_value
+                    self.hidden["~"][n] = str(new_value)
 
             # for s in self.hidden.get('~', []):
             #     sl = s.lower()
@@ -1195,12 +1213,13 @@ def is_blankline(l):
     return l.strip() == ""
 
 
-def get_cards(inp, debug=None, preservetabs=False):
+def get_cards(inp: str, debug: bool = None, preservetabs: bool = False) -> Iterable[Card]:
     """
     Check first existence of a dump file
 
     If dump exists and it is newer than the input file, read the dump file
     """
+    # TODO @dvp2015: the docsring is not implemented
     yield from get_cards_from_input(inp, debug=debug, preservetabs=preservetabs)
 
 
