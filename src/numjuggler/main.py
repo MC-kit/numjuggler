@@ -8,6 +8,7 @@ import sys
 
 from io import StringIO
 from math import pi as Pi
+from typing import TextIO
 
 from numjuggler import likefunc as lf
 from numjuggler import numbering as mn
@@ -123,7 +124,7 @@ modes = (
 )
 
 
-def processing(args, cards: list[mp.Card], debuglog) -> None:
+def processing(args, cards: list[mp.Card], debuglog: TextIO | None) -> StringIO:
     # define output string stream
     outstr = StringIO()
 
@@ -1511,7 +1512,7 @@ def main(args=sys.argv[1:]):
 
                 dir1 = os.path.split(nj.__file__)[0]  # remove filename
                 dir1 = os.path.split(dir1)[0]  # remove the most deep dir
-                hlp = os.path.join(dir1, f"help/{harg.h}.rst")
+                hlp = os.path.join(dir1, f"numjuggler/help/{harg.h}.md.txt")
                 print(f"Reading help from {hlp}")
                 print(open(hlp).read())
             except Exception:
