@@ -101,33 +101,66 @@ CID = __CIDClass()
 
 class Card:
     """
-    Representation of a card.
+    Representation of an MCNP card.
+
+    Attributes
+    ----------
+
+    lines
+        original lines of an MCNP specification
+    ctype
+        card type by its position in the input
+    pos
+        Input file line number, where the card was found
+    debug, optional
+        Optional file-like object to write debug info, by default None
+    cstrg
+        True if self.lines has changed after initialization
+        used in remove_hash function (default False)
+
+    self.dtype = None
+        data card type. Defined from the get_values() method.
+        Has sense only to data cards (see ctype).
+        For other card types is None.
     """
 
     def __init__(
         self, lines: list[str], ctype: Literal[1, 2, 3, 4, 5], pos: int, debug: TextIO | None = None
     ):
+        """Setup Card instance.
 
-        # Original lines, as read from the input file
+        Parameters
+        ----------
+        lines
+            Original lines, as read from the input file
+        ctype
+            card type by its position in the input
+        pos
+            Input file line number, where the card was found
+        debug, optional
+            Optional file-like object to write debug info, by default None
+        """
+
         self.lines = lines
+        """Original lines, as read from the input file"""
 
-        # card type by its position in the input. See CID class.
         self.ctype = ctype
+        """card type by its position in the input.
+        See CID class"""
 
-        # True if self.lines has changed after initialization
-        # used in remove_hash function
         self.cstrg = False
+        """True if self.lines has changed after initialization
+        used in remove_hash function"""
 
-        # data card type. Defined from the get_values() method.
-        # Has sense only to data cards (see ctype). For other card types
-        # is None.
         self.dtype = None
+        """data card type. Defined from the get_values() method.
+        Has sense only to data cards (see ctype). For other card types is None."""
 
-        # Input file line number, where the card was found.
         self.pos = pos
+        """Input file line number, where the card was found."""
 
-        # File-like object to write debug info (if not None)
         self.debug = debug
+        """File-like object to write debug info"""
 
         # template string. Represents the general structure of the card. It is
         # a copy of lines, but meaningful parts are replaced by format
@@ -981,7 +1014,7 @@ def _split_surface(input_):
 
 
 def _get_int(s: str) -> str:
-    """Extract digits at the end of a word `s`.
+    """Extract contigous digits from a word `s`.
 
     Example
     -------
@@ -991,6 +1024,8 @@ def _get_int(s: str) -> str:
     '100'
     >>> _get_int("m2")
     '2'
+    >>> _get_int("d1s")
+    '1'
 
     Parameters
     ----------
@@ -1208,21 +1243,27 @@ def load_decode_buffer(filename: str | Path) -> StringIO:
         return StringIO(finp.read().decode(inpencoding, errors="backslashreplace"))
 
 
-def get_cards_from_input(inp: str, debug=None, preservetabs=False) -> Iterable[Card]:
+def get_cards_from_input(
+    inp: str, debug: TextIO | None = None, preservetabs: bool = False
+) -> Iterable[Card]:
     """Load cards from a file.
 
     Parameters
     ----------
     inp
         the filename.
+    debug
+        optional output stream for debugging
+    preservetabs
+        if not, tabs from input text will be removed on reading
 
     Returns
     -------
-    Iterable, return instances of the Card() class representing
+    Iterable, return instances of the Card class representing
     cards in the input file.
     """
 
-    def _yield(card, ct, ln):
+    def _yield(card: list[str], ct: Literal[1, 2, 3, 4, 5], ln: int):
         return Card(card, ct, ln, debug)
 
     def replace_tab(l, cln, preserve=False, ts=8):
