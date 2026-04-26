@@ -3,6 +3,7 @@
 """
 Analyse fmesh cards.
 """
+
 from __future__ import annotations
 
 from numjuggler.parser import Card, are_close_vals
@@ -71,15 +72,15 @@ class FmeshCard(Card):
         """
         sets attributes.
         """
-        tokens = '\n'.join(self.input).replace('=', ' ').lower().split()
+        tokens = "\n".join(self.input).replace("=", " ").lower().split()
         while tokens:
             t = tokens.pop(0)
-            if t == 'geom':
+            if t == "geom":
                 self.geom = tokens.pop(0)
-            elif t in ('origin',) or t[1:] in ('mesh',):
+            elif t in ("origin",) or t[1:] in ("mesh",):
                 # this should work for emesh, imesh, jmesh, kmesh
                 setattr(self, t, tuple(_get_elements(tokens, float)))
-            elif t[1:] in ('ints',):
+            elif t[1:] in ("ints",):
                 setattr(self, t, tuple(_get_elements(tokens, int)))
 
     def ints(self, d=0):
@@ -87,27 +88,27 @@ class FmeshCard(Card):
         return ints tuple in direction d. This should be used instead of
         directly accessing ?ints attributes, since they can be undefined.
         """
-        iname = 'ijk'[d]
+        iname = "ijk"[d]
         try:
-            return getattr(self, iname + 'ints')
+            return getattr(self, iname + "ints")
         except AttributeError:
-            return (1,) * len(getattr(self, iname + 'mesh'))
+            return (1,) * len(getattr(self, iname + "mesh"))
 
     def mesh(self, d=0):
         """
         Similar to ints.
         """
-        iname = 'ijk'[d]
-        return getattr(self, iname + 'mesh')
+        iname = "ijk"[d]
+        return getattr(self, iname + "mesh")
 
     def boundaries(self, d=0):
         """
         d -- one of 0, 1 or 2.
         """
-        if self.geom in ('xyz', 'rect'):
+        if self.geom in ("xyz", "rect"):
             v0 = self.origin[d]
             for n, v1 in zip(self.ints(d), self.mesh(d)):
-                d = (v1 - v0)/float(n)
+                d = (v1 - v0) / float(n)
                 for i in range(n + 1):
-                    yield v0 + d*i
+                    yield v0 + d * i
                 v0 = v1

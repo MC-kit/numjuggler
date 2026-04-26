@@ -10,15 +10,14 @@ except:
 if six.PY2 and vector is not None:
     from math import copysign, isnan
 
-
-    def areclose(l, rtol=1e-4, atol=1e-7, cmnt=None, name='', detailed=True):
+    def areclose(l, rtol=1e-4, atol=1e-7, cmnt=None, name="", detailed=True):
         """
         Check if all elements in the list l are close to each other.
 
         Implementation originally based on numpy.isclose formula
         """
-        f1 = '{}'
-        f2 = '{:15.8e}'
+        f1 = "{}"
+        f2 = "{:15.8e}"
 
         A = min(l)
         B = max(l)
@@ -33,34 +32,32 @@ if six.PY2 and vector is not None:
             rstr = f1.format(rtol)
         else:
             b = max(map(abs, l))
-            rres = rtol*b >= B - A
-            rstr = f2.format(rtol*b)
+            rres = rtol * b >= B - A
+            rstr = f2.format(rtol * b)
 
         result = ares or rres
 
         if cmnt is not None:
             # assume it is a list of comments. Add here information
             c = cmnt.append
-            c('Are close check: ' + name + f': {result}')
+            c("Are close check: " + name + f": {result}")
             if detailed:
-                c('  values: ' + ' '.join(f'{v:15.8e}' for v in l))
-                c(f'  B:      {B:15.8e}')
-                c(f'  A:      {A:15.8e}')
-                c(f'  B - A:  {B - A:15.8e}')
-                c('  atol:   ' + astr)
-                c('  rtol*b: ' + rstr)
+                c("  values: " + " ".join(f"{v:15.8e}" for v in l))
+                c(f"  B:      {B:15.8e}")
+                c(f"  A:      {A:15.8e}")
+                c(f"  B - A:  {B - A:15.8e}")
+                c("  atol:   " + astr)
+                c("  rtol*b: " + rstr)
         return result
-
 
     def get_params(card):
         """
         Return parameters of the GQ card.
         """
-        p1, p2 = card.lower().split('gq')
+        p1, p2 = card.lower().split("gq")
         # Check if there is transformation:
         tr = len(p1.split()) > 1
         return tr, map(float, p2.split())
-
 
     def get_cone_or_cyl(pl):
         """
@@ -71,10 +68,10 @@ if six.PY2 and vector is not None:
         # Define normalization coeff gamma:
         A, B, C, D, E, F, G, H, J, K = pl
         ABC = sum((A, B, C))
-        cmnt.append(' A, B, C:' + ' '.join(f'{v:15.8e}' for v in (A, B, C)))
-        cmnt.append(' D, E, F:' + ' '.join(f'{v:15.8e}' for v in (D, E, F)))
-        cmnt.append(' G, H, J:' + ' '.join(f'{v:15.8e}' for v in (G, H, J)))
-        cmnt.append('       K:' + f' {K:15.8e}')
+        cmnt.append(" A, B, C:" + " ".join(f"{v:15.8e}" for v in (A, B, C)))
+        cmnt.append(" D, E, F:" + " ".join(f"{v:15.8e}" for v in (D, E, F)))
+        cmnt.append(" G, H, J:" + " ".join(f"{v:15.8e}" for v in (G, H, J)))
+        cmnt.append("       K:" + f" {K:15.8e}")
 
         # List of normalization coefficients. 1 is always assumed
         gammas = [1.0, -1.0]
@@ -82,45 +79,45 @@ if six.PY2 and vector is not None:
         tABC = 1e-9
         if areclose((0, E), atol=tDEF, rtol=None):
             if areclose((1, B), atol=tABC, rtol=None):
-                g = 1.0/B
+                g = 1.0 / B
                 gammas.append(g)
-                cmnt.append(f'gamma_B = {g:15.8e}')
+                cmnt.append(f"gamma_B = {g:15.8e}")
             if areclose((1, C), atol=tABC, rtol=None):
-                g = 1.0/C
+                g = 1.0 / C
                 gammas.append(g)
-                cmnt.append(f'gamma_C = {g:15.8e}')
+                cmnt.append(f"gamma_C = {g:15.8e}")
         else:
-            g = 2*E/(2*E*A - D*F)
+            g = 2 * E / (2 * E * A - D * F)
             gammas.append(g)
-            cmnt.append(f'gamma_E = {g:15.8e}')
+            cmnt.append(f"gamma_E = {g:15.8e}")
 
         if areclose((0, F), atol=tDEF, rtol=None):
             if areclose((1, A), atol=tABC, rtol=None):
-                g = 1.0/A
+                g = 1.0 / A
                 gammas.append(g)
-                cmnt.append(f'gamma_A = {g:15.8e}')
+                cmnt.append(f"gamma_A = {g:15.8e}")
             if areclose((1, C), atol=tABC, rtol=None):
-                g = 1.0/C
+                g = 1.0 / C
                 gammas.append(g)
-                cmnt.append(f'gamma_C = {g:15.8e}')
+                cmnt.append(f"gamma_C = {g:15.8e}")
         else:
-            g = 2*F/(2*F*B - D*E)
+            g = 2 * F / (2 * F * B - D * E)
             gammas.append(g)
-            cmnt.append(f'gamma_F = {g:15.8e}')
+            cmnt.append(f"gamma_F = {g:15.8e}")
 
         if areclose((0, D), atol=tDEF, rtol=None):
             if areclose((1, B), atol=tABC, rtol=None):
-                g = 1.0/B
+                g = 1.0 / B
                 gammas.append(g)
-                cmnt.append(f'gamma_B = {g:15.8e}')
+                cmnt.append(f"gamma_B = {g:15.8e}")
             if areclose((1, A), atol=tABC, rtol=None):
-                g = 1.0/A
+                g = 1.0 / A
                 gammas.append(g)
-                cmnt.append(f'gamma_A = {g:15.8e}')
+                cmnt.append(f"gamma_A = {g:15.8e}")
         else:
-            g = 2*D/(2*D*C - E*F)
+            g = 2 * D / (2 * D * C - E * F)
             gammas.append(g)
-            cmnt.append(f'gamma_d = {g:15.8e}')
+            cmnt.append(f"gamma_d = {g:15.8e}")
 
         # Ensure that gamma=1 is considered first
         gammas = set(gammas)
@@ -134,26 +131,26 @@ if six.PY2 and vector is not None:
             R0k2 = scalar_product(R0k, R0k)
             R0cn = scalar_product(n, R0c)
             R0c2 = scalar_product(R0c, R0c)
-            tt = t2**0.5 if t2 >= 0 else float('nan')
-            rc = r2c**0.5 if r2c >= 0 else float('nan')
-            rk = r2k**0.5 if r2k >= 0 else float('nan')
-            cmnt.append(f'gamma: 1 + {gamma - 1.0:15.8e}')
-            cmnt.append(f'     t^2: {t2:15.8e}')
-            cmnt.append(f'      t : {tt:15.8e}')
-            cmnt.append('      n : ' + ' '.join(f'{v:15.8e}' for v in n))
-            cmnt.append(f'   (n,n): {n2:15.8e}')
-            cmnt.append(f'     r^2: {r2c:15.8e}  {r2k:15.8e}')
-            cmnt.append(f'       r: {rc:15.8e}  {rk:15.8e}')
-            cmnt.append('     R0c: ' + ' '.join(f'{v:15.8e}' for v in R0c))
-            cmnt.append('     R0k: ' + ' '.join(f'{v:15.8e}' for v in R0k))
-            cmnt.append(f'  (n,R0): {R0cn:15.8e}  {R0kn:15.8e}')
-            cmnt.append(f' (R0,R0): {R0c2:15.8e}  {R0k2:15.8e}')
-            cmnt.append(f'      c1: {c1:15.8e}')
-            cmnt.append(f'      c2: {c2:15.8e}')
+            tt = t2**0.5 if t2 >= 0 else float("nan")
+            rc = r2c**0.5 if r2c >= 0 else float("nan")
+            rk = r2k**0.5 if r2k >= 0 else float("nan")
+            cmnt.append(f"gamma: 1 + {gamma - 1.0:15.8e}")
+            cmnt.append(f"     t^2: {t2:15.8e}")
+            cmnt.append(f"      t : {tt:15.8e}")
+            cmnt.append("      n : " + " ".join(f"{v:15.8e}" for v in n))
+            cmnt.append(f"   (n,n): {n2:15.8e}")
+            cmnt.append(f"     r^2: {r2c:15.8e}  {r2k:15.8e}")
+            cmnt.append(f"       r: {rc:15.8e}  {rk:15.8e}")
+            cmnt.append("     R0c: " + " ".join(f"{v:15.8e}" for v in R0c))
+            cmnt.append("     R0k: " + " ".join(f"{v:15.8e}" for v in R0k))
+            cmnt.append(f"  (n,R0): {R0cn:15.8e}  {R0kn:15.8e}")
+            cmnt.append(f" (R0,R0): {R0c2:15.8e}  {R0k2:15.8e}")
+            cmnt.append(f"      c1: {c1:15.8e}")
+            cmnt.append(f"      c2: {c2:15.8e}")
 
             # Check parameters common for cone and cylinder
             if isnan(n2) or areclose((0, n2), atol=1e-4, rtol=None):
-                cmnt.append('        gamma sorted out due to n')
+                cmnt.append("        gamma sorted out due to n")
                 continue
 
             # Evaluate surface at some points
@@ -163,14 +160,14 @@ if six.PY2 and vector is not None:
             ni, nj, nk = vector.Vector3(car=n).basis()
             if areclose((0, r2c), atol=1e-6, rtol=None) or isnan(rc) or isnan(R0c2):
                 can_be_cylinder = False
-                cmnt.append('        cannot be cylinder due to r2 or R0')
+                cmnt.append("        cannot be cylinder due to r2 or R0")
             else:
                 can_be_cylinder = True
                 r0 = vector.Vector3(car=R0c)
                 nj.R = rc
                 nk.R = rc
                 for d in distances:
-                    r00 = r0 + d*ni
+                    r00 = r0 + d * ni
                     d1 = evaluate_gq(pl, (r00 + nj).car)
                     d2 = evaluate_gq(pl, (r00 - nj).car)
                     d3 = evaluate_gq(pl, (r00 + nk).car)
@@ -178,7 +175,7 @@ if six.PY2 and vector is not None:
                     rsdc[d] = (d1, d2, d3, d4)
             if areclose((0, t2), atol=1e-6, rtol=None) or isnan(tt) or isnan(R0k2):
                 can_be_cone = False
-                cmnt.append('        cannot be cone due to t2 or R0')
+                cmnt.append("        cannot be cone due to t2 or R0")
             else:
                 can_be_cone = True
                 r0 = vector.Vector3(car=R0k)
@@ -186,7 +183,7 @@ if six.PY2 and vector is not None:
                     rkd = tt * d
                     nj.R = rkd
                     nk.R = rkd
-                    r00 = r0 + d*ni
+                    r00 = r0 + d * ni
                     d1 = evaluate_gq(pl, (r00 + nj).car)
                     d2 = evaluate_gq(pl, (r00 - nj).car)
                     d3 = evaluate_gq(pl, (r00 + nk).car)
@@ -204,42 +201,41 @@ if six.PY2 and vector is not None:
                     else:
                         typ -= 1
                 if typ > 0:
-                    typ = 'c'
+                    typ = "c"
                 else:
-                    typ = 'k'
+                    typ = "k"
             elif can_be_cone:
-                typ = 'k'
+                typ = "k"
             elif can_be_cylinder:
-                typ = 'c'
+                typ = "c"
             else:
-                typ = 'o'
+                typ = "o"
                 continue
 
             # Prepare output
-            if typ == 'k':
+            if typ == "k":
                 org = R0k
                 r2 = r2k
                 rsd = rsdk
-            elif typ == 'c':
+            elif typ == "c":
                 org = R0c
                 r2 = r2c
                 rsd = rsdc
 
             rsdmax = max(map(abs, sum(rsd.values(), ())))
-            cmnt.append(f' Residuals for {typ}, {rsdmax:15.8e}')
+            cmnt.append(f" Residuals for {typ}, {rsdmax:15.8e}")
             for d in distances:
-                cmnt.append(f' at d={d:10.3e}:' + ' '.join(f'{v:15.8e}' for v in rsd[d]))
+                cmnt.append(f" at d={d:10.3e}:" + " ".join(f"{v:15.8e}" for v in rsd[d]))
             if rsdmax > 1e-1:
-                typ = 'o'
+                typ = "o"
                 continue
-            cmnt.append(f' Final max. residual for {typ}, {rsdmax:15.8e}')
+            cmnt.append(f" Final max. residual for {typ}, {rsdmax:15.8e}")
 
-            cmnt = ['c ' + c for c in cmnt]
+            cmnt = ["c " + c for c in cmnt]
             return typ, n, org, t2, r2, cmnt
-        typ = 'o'
-        cmnt = ['c ' + c for c in cmnt]
+        typ = "o"
+        cmnt = ["c " + c for c in cmnt]
         return typ, None, None, None, None, cmnt
-
 
     def get_surface_parameters(gamma, pl):
         """
@@ -247,7 +243,7 @@ if six.PY2 and vector is not None:
         gamma -- normlaization coefficient
         """
         # normliaze GQ parameters
-        pl = (gamma*v for v in pl)
+        pl = (gamma * v for v in pl)
         A, B, C, D, E, F, G, H, J, K = pl
 
         # parameter t^2
@@ -255,18 +251,18 @@ if six.PY2 and vector is not None:
 
         # parameters xn, yn, zn
         t21 = sum((3.0, -A, -B, -C))
-        xn2 = (1 - A)/t21
-        yn2 = (1 - B)/t21
-        zn2 = (1 - C)/t21
-        xn = float('nan')
-        yn = float('nan')
-        zn = float('nan')
+        xn2 = (1 - A) / t21
+        yn2 = (1 - B) / t21
+        zn2 = (1 - C) / t21
+        xn = float("nan")
+        yn = float("nan")
+        zn = float("nan")
         if xn2 >= 0:
-            xn = xn2 ** 0.5
+            xn = xn2**0.5
         if yn2 >= 0:
-            yn = yn2 ** 0.5
+            yn = yn2**0.5
         if zn2 >= 0:
-            zn = zn2 ** 0.5
+            zn = zn2**0.5
         mn2 = max((xn2, yn2, zn2))
         if xn2 == mn2:
             yn = copysign(yn, -D)
@@ -288,28 +284,33 @@ if six.PY2 and vector is not None:
         r2c = x0c**2 + y0c**2 + z0c**2 - K
 
         # Formulae for cone
-        cR0n = (G*xn + H*yn + J*zn)*t21/2.0
+        cR0n = (G * xn + H * yn + J * zn) * t21 / 2.0
         if t2 > 0:
             cR0n = cR0n / t2
         else:
-            cR0n = copysign(float('inf'), cR0n*t2)
-        x0k = xn*cR0n - G*0.5
-        y0k = yn*cR0n - H*0.5
-        z0k = zn*cR0n - J*0.5
-        r2k = -(G*x0k + H*y0k + J*z0k)/2 - K
+            cR0n = copysign(float("inf"), cR0n * t2)
+        x0k = xn * cR0n - G * 0.5
+        y0k = yn * cR0n - H * 0.5
+        z0k = zn * cR0n - J * 0.5
+        r2k = -(G * x0k + H * y0k + J * z0k) / 2 - K
 
         # Consistency checks
-        rgh1 = D*E*F
-        lft1 = -8*(1 - A)*(1 - B)*(1 - C)
-        rgh2 = (G*xn + H*yn + J*zn)**2 * t21
-        lft2 = G**2*(1 - A) + H**2*(1 - B) + J**2*(1 - C) - G*H*D - J*G*F - J*H*E
+        rgh1 = D * E * F
+        lft1 = -8 * (1 - A) * (1 - B) * (1 - C)
+        rgh2 = (G * xn + H * yn + J * zn) ** 2 * t21
+        lft2 = G**2 * (1 - A) + H**2 * (1 - B) + J**2 * (1 - C) - G * H * D - J * G * F - J * H * E
         c1 = rgh1 - lft1
         c2 = rgh2 - lft2
-        return (t2, (xn, yn, zn),
-                (x0c, y0c, z0c), r2c,    # cylinder formulae
-                (x0k, y0k, z0k), r2k,    # cone formulae
-                c1, c2)
-
+        return (
+            t2,
+            (xn, yn, zn),
+            (x0c, y0c, z0c),
+            r2c,  # cylinder formulae
+            (x0k, y0k, z0k),
+            r2k,  # cone formulae
+            c1,
+            c2,
+        )
 
     def evaluate_gq(pl, p):
         """
@@ -317,11 +318,19 @@ if six.PY2 and vector is not None:
         """
         x, y, z = p
         A, B, C, D, E, F, G, H, J, K = pl
-        d = (A*x**2 + B*y**2 + C*z**2 +
-             D*x*y  + E*y*z  + F*z*x  +
-             G*x    + H*y    + J*z    + K)
+        d = (
+            A * x**2
+            + B * y**2
+            + C * z**2
+            + D * x * y
+            + E * y * z
+            + F * z * x
+            + G * x
+            + H * y
+            + J * z
+            + K
+        )
         return d
-
 
     def basis_on_axis(axis):
         """
@@ -334,8 +343,8 @@ if six.PY2 and vector is not None:
         maximal absolute value is positive.
         """
         m = max(axis)
-        n = 0      # number of shifts
-        o = 'xyz'  # axis names
+        n = 0  # number of shifts
+        o = "xyz"  # axis names
         t = tuple(axis)
         while t[0] != m:
             t = (t[2], t[0], t[1])
@@ -351,9 +360,9 @@ if six.PY2 and vector is not None:
         xn2 = xn**2
         yn2 = yn**2
         zn2 = zn**2
-        b = 1.0/((1.0 - yn2)**2 + yn2*(xn2 + zn2))**0.5
-        a = -b*yn
-        j = (xn*a, yn*a + b, zn*a)
+        b = 1.0 / ((1.0 - yn2) ** 2 + yn2 * (xn2 + zn2)) ** 0.5
+        a = -b * yn
+        j = (xn * a, yn * a + b, zn * a)
         k = cross_product(i, j)
 
         # shift vector names back n times
@@ -369,62 +378,60 @@ if six.PY2 and vector is not None:
         # print b, o
         return b, o[0]
 
-
     def cross_product(a, b):
         """
         Return cross-product [a, b]
         """
-        x = a[1]*b[2] - a[2]*b[1]
-        y = b[0]*a[2] - b[2]*a[0]
-        z = a[0]*b[1] - a[1]*b[0]
+        x = a[1] * b[2] - a[2] * b[1]
+        y = b[0] * a[2] - b[2] * a[0]
+        z = a[0] * b[1] - a[1] * b[0]
         return x, y, z
-
 
     def scalar_product(a, b):
         """
         Return scalar product (a, b)
         """
-        return a[0]*b[0] + a[1]*b[1] + a[2]*b[2]
-
+        return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
 
     def check_basis(i, j, k):
         """
         Check that i, j, k are orthogonal, unit and right-hand.
         """
-        f = '{:16.8e}'
-        vf = f*3
+        f = "{:16.8e}"
+        vf = f * 3
         il = scalar_product(i, i)
         jl = scalar_product(j, j)
         kl = scalar_product(k, k)
         cmnt = []
-        if not areclose((il, jl, kl, 1.0), atol=1e-7, rtol=None, cmnt=cmnt, name='Basis vector normalization'):
+        if not areclose(
+            (il, jl, kl, 1.0), atol=1e-7, rtol=None, cmnt=cmnt, name="Basis vector normalization"
+        ):
             for comment in cmnt:
                 print(comment)
-            print('Basis vectors not normal')
+            print("Basis vectors not normal")
             # raise ValueError('Basis vectors not normal')
 
         ij = scalar_product(i, j)
         ik = scalar_product(i, k)
         jk = scalar_product(j, k)
         if not areclose((ij, ik, jk, 0.0), atol=1e-7, rtol=None):
-            print('i', vf.format(*i))
-            print('j', vf.format(*j))
-            print('k', vf.format(*k))
-            print('products', vf.format(ij, ik, jk))
-            print('Basis vectors not orthogonal')
+            print("i", vf.format(*i))
+            print("j", vf.format(*j))
+            print("k", vf.format(*k))
+            print("products", vf.format(ij, ik, jk))
+            print("Basis vectors not orthogonal")
             # raise ValueError('Basis vectors not orthogonal')
 
         ii = scalar_product(i, cross_product(j, k))
         jj = scalar_product(j, cross_product(k, i))
         kk = scalar_product(k, cross_product(i, j))
         if not areclose((ii, jj, kk, 1.0)):
-            print('(i, [j, k])', f.format(ii))
-            print('(j, [k, i])', f.format(jj))
-            print('(k, [i, j])', f.format(kk))
-            print('Basis vectors not right-hand')
+            print("(i, [j, k])", f.format(ii))
+            print("(j, [k, i])", f.format(jj))
+            print("(k, [i, j])", f.format(kk))
+            print("Basis vectors not right-hand")
             # raise ValueError('Basis vectors not right-hand')
         return i, j, k
-
 
     def transform(p, b, o):
         """
@@ -436,14 +443,13 @@ if six.PY2 and vector is not None:
         x, y, z = p
         i, j, k = b
         X, Y, Z = o
-        dv = (x-X, y-Y, z-Z)
+        dv = (x - X, y - Y, z - Z)
         xp = scalar_product(dv, i)
         yp = scalar_product(dv, j)
         zp = scalar_product(dv, k)
         return xp, yp, zp
 
-
-    if __name__ == '__main__':
+    if __name__ == "__main__":
         a = 1.0
         b = a + 1e-7
         c = a - 1e-7

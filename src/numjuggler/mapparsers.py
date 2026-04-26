@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 from collections import OrderedDict
@@ -16,19 +15,19 @@ def lines(fname):
     """
     with open(fname) as f:
         for l in f:
-            ll = l.split('#')[0].strip()
-            if ll and ':' in ll:
+            ll = l.split("#")[0].strip()
+            if ll and ":" in ll:
                 t = ll[0]  # 1-st entry, c, u, m etc
-                ranges, val = ll[1:].split(':', 1)
+                ranges, val = ll[1:].split(":", 1)
                 ranges = ranges.strip()
                 rr = list(_get_map_ranges(ranges))
 
                 # TODO: extract format from val, if val has more than 1 entry
-                if '{' in val:
-                    val, fmt = val.split('{')
-                    fmt = '{' + fmt
+                if "{" in val:
+                    val, fmt = val.split("{")
+                    fmt = "{" + fmt
                 else:
-                    fmt = '{:10.3e}'  # default formatting for density
+                    fmt = "{:10.3e}"  # default formatting for density
                 yield t, rr, val, fmt
 
 

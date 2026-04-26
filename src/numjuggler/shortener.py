@@ -16,7 +16,7 @@ def f(l):
             else:
                 # r-series stops here.
                 yield es
-                yield f'{iR}r'
+                yield f"{iR}r"
                 iR = 0
                 es = e
         elif iD != 0:
@@ -28,7 +28,7 @@ def f(l):
             else:
                 # i-series stops here.
                 yield es
-                yield f'{iI}i'
+                yield f"{iI}i"
                 yield ep
                 iI = 0
                 iD = 0
@@ -42,8 +42,6 @@ def f(l):
             iI = 0
             iD = e - es
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     pass
-
-
-

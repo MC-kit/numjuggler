@@ -5,6 +5,7 @@ This is for a list of cells, where repititions and multiplication by a constant
 are not possible or seldom.
 
 """
+
 from __future__ import annotations
 
 
@@ -18,22 +19,24 @@ def shorten(list_, rmin=2, imin=2):
         for e in list_:
             yield e
     else:
+
         def _yield():
             if dp == 0:
                 # R-series stops here. x does not belong to it.
                 if n > rmin:
-                    yield str(n) + 'r'
+                    yield str(n) + "r"
                 else:
                     for i in range(n):
                         yield xp
             else:
                 # I-series stops here. x does not belong to it.
                 if n > imin:
-                    yield str(n-1) + 'i'
+                    yield str(n - 1) + "i"
                 else:
-                    for i in range(n-1, 0, -1):
-                        yield xp - dp*i
+                    for i in range(n - 1, 0, -1):
+                        yield xp - dp * i
                 yield xp
+
         xp = list_[0]
         dp = list_[1] - xp  # ensure that 1st two elements compose a series.
         n = 0
@@ -65,14 +68,14 @@ def expand(list_):
             e = float(e)
             d = (e - es) / (n + 1)
             for i in range(1, n + 2):
-                yield es + d*i
+                yield es + d * i
             es = None
             ep = e
-        elif 'r' in str(e).lower():
+        elif "r" in str(e).lower():
             n = int(e[:-1])
             for i in range(n):
                 yield ep
-        elif 'i' in str(e).lower():
+        elif "i" in str(e).lower():
             n = int(e[:-1])
             es = ep
         else:
@@ -80,7 +83,7 @@ def expand(list_):
             yield ep
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # test cases should cover the following situations:
     # * empty list
     # * only inside
@@ -91,40 +94,43 @@ if __name__ == '__main__':
     # * at begin and at end
     # * at begin, inside and end
 
-    tr = [[],
-          [1, 2, 2, 2, 1],
-          [1, 1, 1, 2],
-          [1, 2, 2, 2],
-          [1, 2, 3, 4],
-          [1, 1, 1, 1],
-          [1, 1, 2, 3, 3],
-          [1, 1, 2, 3, 3, 4, 5, 5, 5]]
+    tr = [
+        [],
+        [1, 2, 2, 2, 1],
+        [1, 1, 1, 2],
+        [1, 2, 2, 2],
+        [1, 2, 3, 4],
+        [1, 1, 1, 1],
+        [1, 1, 2, 3, 3],
+        [1, 1, 2, 3, 3, 4, 5, 5, 5],
+    ]
 
-    ti = [[],
-          [1, 3, 4, 5, 7],
-          [1, 2, 3, 7, 9],
-          [1, 2, 4, 9, 11, 13],
-          [1, 2, 4, 7, 7],
-          [1, 2, 3],
-          [1, 2, 3, 4, 5],
-          [1, 2, 3, 3, 4, 5, 6],
-          [1, 2, 3, 3, 5, 6, 7, 21, 23, 25]]
+    ti = [
+        [],
+        [1, 3, 4, 5, 7],
+        [1, 2, 3, 7, 9],
+        [1, 2, 4, 9, 11, 13],
+        [1, 2, 4, 7, 7],
+        [1, 2, 3],
+        [1, 2, 3, 4, 5],
+        [1, 2, 3, 3, 4, 5, 6],
+        [1, 2, 3, 3, 5, 6, 7, 21, 23, 25],
+    ]
 
     def test_(tl, rmin, imin, name):
-        print(name, '*'*20)
+        print(name, "*" * 20)
         for l in tl:
             ls = list(shorten(l, imin=imin, rmin=rmin))
             le = list(expand(ls))
 
             if l != le:
                 for ll in [l, ls, le]:
-                    print('**', end=' ')
+                    print("**", end=" ")
                     for e in ll:
-                        print(e, end=' ')
+                        print(e, end=" ")
                     print()
-                    print('-'*10)
+                    print("-" * 10)
 
     for imin in [1, 2, 3, 4]:
         for rmin in [1, 2, 3, 4]:
-            test_(tr + ti, rmin, imin,
-                  f'CustomList imin={imin}, rmin={rmin}')
+            test_(tr + ti, rmin, imin, f"CustomList imin={imin}, rmin={rmin}")
