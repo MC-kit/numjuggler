@@ -679,7 +679,6 @@ source = { editable = "." }
 dependencies = [
     { name = "chardet" },
     { name = "numpy" },
-    { name = "six" },
 ]
 
 [package.dev-dependencies]
@@ -731,7 +730,6 @@ test = [
 requires-dist = [
     { name = "chardet", specifier = ">=7.4.3" },
     { name = "numpy", specifier = ">=2.4.4" },
-    { name = "six", specifier = ">=1.17.0" },
 ]
 
 [package.metadata.requires-dev]

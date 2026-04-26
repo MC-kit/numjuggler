@@ -25,7 +25,10 @@ classifiers = [
   "Topic :: Scientific/Engineering :: Physics",
   "Topic :: Utilities",
 ]
-dependencies = ["chardet>=7.4.3", "numpy>=2.4.4", "six>=1.17.0"]
+dependencies = [
+    "chardet>=7.4.3",
+    "numpy>=2.4.4",
+]
 urls."Bug Tracker" = "https://github.com/travleev/numjuggler/issues"
 urls.Changelog = "https://github.com/travleev/numjuggler/releases"
 urls.documentation = "https://numjuggler.readthedocs.io/"
