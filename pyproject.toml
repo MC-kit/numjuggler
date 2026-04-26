@@ -34,7 +34,7 @@ urls.repository = "https://github.com/travleev/numjuggler/"
 write_to = "src/numjuggler/version.py"
 
 [project.optional-dependencies]
-noqq = ["numpy>=2.4.4"]
+nogq = ["numpy>=2.4.4"]
 
 [project.scripts]
 numjuggler = "numjuggler.main:main"
