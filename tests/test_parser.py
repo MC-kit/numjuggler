@@ -11,7 +11,7 @@ from numjuggler.parser import (
     _split_data,
     are_close_lists,
     get_cards_from_input,
-    load_decode_buffer,
+    # load_decode_buffer,
 )
 
 HERE = Path(__file__).parent
@@ -297,24 +297,24 @@ def test_card_wrap(card, wrap, expected):
     assert actual == expected
 
 
-@pytest.mark.parametrize(
-    "encoding",
-    [
-        "utf8",
-        pytest.param(
-            "cp1251", marks=pytest.mark.xfail(reason="encoding auto detection fails on short texts")
-        ),
-        pytest.param(
-            "ascii", marks=pytest.mark.xfail(reason="acsii encoding corrupts any non english text")
-        ),
-    ],
-)
-def test_load_decode_buffer(cd_tmpdir, encoding):
-    text = "Something with Юникод valid for cp1251"
-    path = Path("test.txt")
-    path.write_text(text, encoding=encoding, errors="backslashreplace")
-    actual = load_decode_buffer(path).getvalue()
-    assert actual == text
+# @pytest.mark.parametrize(
+#     "encoding",
+#     [
+#         "utf8",
+#         pytest.param(
+#             "cp1251", marks=pytest.mark.xfail(reason="encoding auto detection fails on short texts")
+#         ),
+#         pytest.param(
+#             "ascii", marks=pytest.mark.xfail(reason="acsii encoding corrupts any non english text")
+#         ),
+#     ],
+# )
+# def test_load_decode_buffer(cd_tmpdir, encoding):
+#     text = "Something with Юникод valid for cp1251"
+#     path = Path("test.txt")
+#     path.write_text(text, encoding=encoding, errors="backslashreplace")
+#     actual = load_decode_buffer(path).getvalue()
+#     assert actual == text
 
 
 @pytest.mark.parametrize(

@@ -1497,6 +1497,8 @@ def main(args=sys.argv[1:]):
         action="store_true",
     )
     p.add_argument("--log", help="Log file.", type=str, default="")
+    p.add_argument("--encoding", help="Files encoding", default="utf8")
+    p.add_argument("-o", "--output", help="Output file name", default=None)
 
     # parse help option in another parser:
     ph = ap.ArgumentParser(add_help=False)
@@ -1542,26 +1544,27 @@ def main(args=sys.argv[1:]):
             debuglog = None
 
         # process input file only once:
-        cards = list(mp.get_cards(args.inp, debuglog, preservetabs=args.preservetabs))
+        cards = list(
+            mp.get_cards(args.inp, debuglog, preservetabs=args.preservetabs, encoding=args.encoding)
+        )
 
         # processing based on selected mode of operation
         outstr = processing(args, cards, debuglog)
 
-        # dump output string to stdout
-        print(outstr.getvalue(), end="")
+        if not args.output:
+            # dump output string to stdout
+            print(outstr.getvalue(), end="")
 
-        # determine outut file name
-        filename, _ = os.path.splitext(args.inp)
-        outfile = ".".join((filename, args.mode + ".txt"))
+            # determine outut file name
+            filename, _ = os.path.splitext(args.inp)
+            outfile = ".".join((filename, args.mode + ".txt"))
+        else:
+            outfile = args.output
 
         # dump output string after stripping trailing spaces
         outstr.seek(0)
-        with open(outfile, mode="wb") as fout:
-            fout.write(
-                "\n".join([l.rstrip() for l in outstr]).encode(
-                    encoding="ascii", errors="backslashreplace"
-                )
-            )
+        with open(outfile, mode="w", encoding=args.encoding) as fout:
+            fout.write("\n".join([l.rstrip() for l in outstr]))
 
         outstr.close()
 

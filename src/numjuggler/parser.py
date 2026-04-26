@@ -12,8 +12,6 @@ import warnings
 from io import StringIO
 from pathlib import Path
 
-from chardet import UniversalDetector
-
 from numjuggler.utils import PartialFormatter
 
 if TYPE_CHECKING:
@@ -1213,14 +1211,16 @@ def is_blankline(l):
     return l.strip() == ""
 
 
-def get_cards(inp: str, debug: bool = None, preservetabs: bool = False) -> Iterable[Card]:
+def get_cards(
+    inp: str, debug: bool = None, preservetabs: bool = False, encoding="utf8"
+) -> Iterable[Card]:
     """
     Check first existence of a dump file
 
     If dump exists and it is newer than the input file, read the dump file
     """
     # TODO @dvp2015: the docsring is not implemented
-    yield from get_cards_from_input(inp, debug=debug, preservetabs=preservetabs)
+    yield from get_cards_from_input(inp, debug=debug, preservetabs=preservetabs, encoding=encoding)
 
 
 def index_(line: str, chars: str = "$&") -> int:
@@ -1240,30 +1240,11 @@ def index_(line: str, chars: str = "$&") -> int:
     # return d
 
 
-def load_decode_buffer(filename: str | Path) -> StringIO:
-    """
-    Load and decode the text inside an file to a string buffer.
-
-    filename: path and name of input file
-    """
-    # detect encoding input deck
-    detector = UniversalDetector()
-    with Path(filename).open("rb") as finp:
-        for row in finp:
-            detector.feed(row)
-            if detector.done:
-                break
-    detector.close()
-    inpencoding = detector.result["encoding"]
-
-    # bufferize input deck in memory while decoding
-    # replace unknown characters found with hexadecimal Unicode backslashed escape sequences
-    with Path(filename).open(mode="rb") as finp:
-        return StringIO(finp.read().decode(inpencoding, errors="backslashreplace"))
-
-
 def get_cards_from_input(
-    inp: str, debug: TextIO | None = None, preservetabs: bool = False
+    inp: str,
+    debug: TextIO | None = None,
+    preservetabs: bool = False,
+    encoding: str = "utf8",
 ) -> Iterable[Card]:
     """Load cards from a file.
 
@@ -1275,7 +1256,8 @@ def get_cards_from_input(
         optional output stream for debugging
     preservetabs
         if not, tabs from input text will be removed on reading
-
+    encoding:
+        input file encoding
     Returns
     -------
     Iterable, return instances of the Card class representing
@@ -1299,112 +1281,110 @@ def get_cards_from_input(
             l = l[:i] + " " * ii + l[i + 1 :]
         return l[:]
 
-    # load input deck file inside a string buffer
-    f = load_decode_buffer(inp)
+    with open(inp, encoding=encoding) as f:
+        cln = 0  # current line number. Used only for debug
+        # define the first block:
+        # -----------------------
 
-    cln = 0  # current line number. Used only for debug
-    # define the first block:
-    # -----------------------
+        # Next block ID
+        ncid = 0  # 0 is not used in card ID dictionary CID.
 
-    # Next block ID
-    ncid = 0  # 0 is not used in card ID dictionary CID.
-
-    # Parse the 1-st line. It can be message, cell or data block.
-    l = replace_tab(next(f), cln, preserve=preservetabs)
-    cln += 1
-    # kw = l.lower().split()[0]
-    kw = l.lstrip()
-    if kw[:8].lower() == "message:":
-        # read message block right here
-        res = []
-        while not is_blankline(l):
-            res.append(l)
-            l = replace_tab(next(f), cln, preserve=preservetabs)
-            cln += 1
-        yield _yield(res, CID.message, cln - 1)  # message card
-        yield _yield(l, CID.blankline, cln)  # blank line
+        # Parse the 1-st line. It can be message, cell or data block.
         l = replace_tab(next(f), cln, preserve=preservetabs)
         cln += 1
-        ncid = CID.title
-    elif kw[:8].lower() == "continue":
-        # input file for continue job. Contains only data block.
-        ncid = CID.data
-    else:
-        ncid = CID.title
-    if ncid == CID.title:
-        # l contains the title card
-        yield _yield([l], ncid, cln)
-        ncid += 1
-
-    # read all other lines
-    # --------------------
-
-    # Line can be a continuation line in the following cases:
-    #   * all lines in the message block, i.e. before the blank line
-    #     delimiter
-    #   * if line starts with 5 or more spaces,
-    #   * if previous line ends with & sign.
-    # Thus, the role of the current line (continuation or not) can be
-    # defined by the line itself (5 spaces), or by previous lines (message
-    # block or & sign). This can lead to inconsistency, when previous line
-    # is delimited by &, but is followed by the blank line delimiter.  in
-    # this case (rather theretical), blank line delimiter (as appeared more
-    # lately) delimites the card from the previous line.
-    cf = False  # continuation line flag. True only when prev. line has &.
-
-    # Comment lines (CL) can be between cards or inside them. CL between two
-    # cards are yielded as block of comments (although usually, CL are used
-    # to describe cards that follow them).  CL inside a card will belong to
-    # the card.
-
-    card = []  # card is a list of lines.
-    cmnt = []  # list of comment lines.
-    for l in f:
-        l = replace_tab(l, cln, preserve=preservetabs)
-        cln += 1
-        if is_blankline(l):
-            # blank line delimiter. Stops card even if previous line
-            # contains &
-            if card:
-                # card can be empty, for example, when several empty lines
-                # are at the end of file
-                yield _yield(card, ncid, cln - len(card) - len(cmnt))
-            if cmnt:
-                yield _yield(cmnt, CID.comment, cln - len(cmnt))
-                cmnt = []
-            yield _yield(l, CID.blankline, cln)
-            ncid += 1
-            card = []
-            if ncid == 6:
-                break
-        elif l[0:5] == "     " or cf:
-            # l is continuation line.
-            if cmnt:
-                card += cmnt  # prev. comment lines belong to this card.
-                cmnt = []
-            card.append(l)
-            cf = l[: index_(l)].find("&", 0, 81) > -1
-        elif is_commented(l):
-            # l is a line comment. Where it belongs (to the current card or
-            # to the next one), depends on the next line, therefore, just
-            # store temorarily.
-            cmnt.append(l)
+        # kw = l.lower().split()[0]
+        kw = l.lstrip()
+        if kw[:8].lower() == "message:":
+            # read message block right here
+            res = []
+            while not is_blankline(l):
+                res.append(l)
+                l = replace_tab(next(f), cln, preserve=preservetabs)
+                cln += 1
+            yield _yield(res, CID.message, cln - 1)  # message card
+            yield _yield(l, CID.blankline, cln)  # blank line
+            l = replace_tab(next(f), cln, preserve=preservetabs)
+            cln += 1
+            ncid = CID.title
+        elif kw[:8].lower() == "continue":
+            # input file for continue job. Contains only data block.
+            ncid = CID.data
         else:
-            # l is the 1-st line of a card. Return previous card and
-            # comments
-            if card:
-                yield _yield(card, ncid, cln - len(card) - len(cmnt))
-            if cmnt:
-                yield _yield(cmnt, CID.comment, cln - len(cmnt))
-                cmnt = []
-            card = [l]
-            # if tally comment card, i.e. started with fc, the & character
-            # does not mean continuation.
-            cf = not is_fc_card(l) and l[: index_(l)].find("&", 0, 81) > -1
-    if card:
-        yield _yield(card, ncid, cln - len(card) - len(cmnt))
-    if cmnt:
-        yield _yield(cmnt, CID.comment, cln - len(cmnt))
+            ncid = CID.title
+        if ncid == CID.title:
+            # l contains the title card
+            yield _yield([l], ncid, cln)
+            ncid += 1
+
+        # read all other lines
+        # --------------------
+
+        # Line can be a continuation line in the following cases:
+        #   * all lines in the message block, i.e. before the blank line
+        #     delimiter
+        #   * if line starts with 5 or more spaces,
+        #   * if previous line ends with & sign.
+        # Thus, the role of the current line (continuation or not) can be
+        # defined by the line itself (5 spaces), or by previous lines (message
+        # block or & sign). This can lead to inconsistency, when previous line
+        # is delimited by &, but is followed by the blank line delimiter.  in
+        # this case (rather theretical), blank line delimiter (as appeared more
+        # lately) delimites the card from the previous line.
+        cf = False  # continuation line flag. True only when prev. line has &.
+
+        # Comment lines (CL) can be between cards or inside them. CL between two
+        # cards are yielded as block of comments (although usually, CL are used
+        # to describe cards that follow them).  CL inside a card will belong to
+        # the card.
+
+        card = []  # card is a list of lines.
+        cmnt = []  # list of comment lines.
+        for l in f:
+            l = replace_tab(l, cln, preserve=preservetabs)
+            cln += 1
+            if is_blankline(l):
+                # blank line delimiter. Stops card even if previous line
+                # contains &
+                if card:
+                    # card can be empty, for example, when several empty lines
+                    # are at the end of file
+                    yield _yield(card, ncid, cln - len(card) - len(cmnt))
+                if cmnt:
+                    yield _yield(cmnt, CID.comment, cln - len(cmnt))
+                    cmnt = []
+                yield _yield(l, CID.blankline, cln)
+                ncid += 1
+                card = []
+                if ncid == 6:
+                    break
+            elif l[0:5] == "     " or cf:
+                # l is continuation line.
+                if cmnt:
+                    card += cmnt  # prev. comment lines belong to this card.
+                    cmnt = []
+                card.append(l)
+                cf = l[: index_(l)].find("&", 0, 81) > -1
+            elif is_commented(l):
+                # l is a line comment. Where it belongs (to the current card or
+                # to the next one), depends on the next line, therefore, just
+                # store temorarily.
+                cmnt.append(l)
+            else:
+                # l is the 1-st line of a card. Return previous card and
+                # comments
+                if card:
+                    yield _yield(card, ncid, cln - len(card) - len(cmnt))
+                if cmnt:
+                    yield _yield(cmnt, CID.comment, cln - len(cmnt))
+                    cmnt = []
+                card = [l]
+                # if tally comment card, i.e. started with fc, the & character
+                # does not mean continuation.
+                cf = not is_fc_card(l) and l[: index_(l)].find("&", 0, 81) > -1
+        if card:
+            yield _yield(card, ncid, cln - len(card) - len(cmnt))
+        if cmnt:
+            yield _yield(cmnt, CID.comment, cln - len(cmnt))
 
 
 def get_blocks(cards):

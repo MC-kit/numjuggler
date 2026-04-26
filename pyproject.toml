@@ -25,19 +25,16 @@ classifiers = [
   "Topic :: Scientific/Engineering :: Physics",
   "Topic :: Utilities",
 ]
-dependencies = [
-    "chardet>=7.4.3",
-    "numpy>=2.4.4",
-]
 urls."Bug Tracker" = "https://github.com/travleev/numjuggler/issues"
 urls.Changelog = "https://github.com/travleev/numjuggler/releases"
 urls.documentation = "https://numjuggler.readthedocs.io/"
 urls.homepage = "https://github.com/travleev/numjuggler/"
 urls.repository = "https://github.com/travleev/numjuggler/"
-
-
 [tool.setuptools_scm]
 write_to = "src/numjuggler/version.py"
+
+[project.optional-dependencies]
+noqq = ["numpy>=2.4.4"]
 
 [project.scripts]
 numjuggler = "numjuggler.main:main"
@@ -66,11 +63,11 @@ style = [
 ]
 pylint = ["pylint", "pylint-per-file-ignores"]
 test = [
-    "pygments>=2.20.0",
-    "pytest>=9.0.3",
-    "pytest-cov>=7.1.0",
-    "pytest-mock>=3.15.1",
-    "xdoctest>=1.3.2",
+  "pygments>=2.20.0",
+  "pytest>=9.0.3",
+  "pytest-cov>=7.1.0",
+  "pytest-mock>=3.15.1",
+  "xdoctest>=1.3.2",
 ]
 
 [tool.coverage]
@@ -84,17 +81,17 @@ report.exclude_lines = [
   # Don't complain about missing debug-only code:
   "def __repr__",
   "if __name__ == .__main__.:",
-  # Don't complain if non-runnable code isn't run:
   "if 0:",
   "if self.debug",
   "if TYPE_CHECKING:",
-  # Have to re-enable the standard pragma
   "pragma: no cover",
-  # Don't complain if tests don't hit defensive assertion code:
   "raise AssertionError",
   "raise NotImplementedError",
 ]
-report.fail_under = 30 # TODO @dvp: should be at least 80%
+# Don't complain if non-runnable code isn't run:
+# Have to re-enable the standard pragma
+# Don't complain if tests don't hit defensive assertion code:
+report.fail_under = 30                                      # TODO @dvp: should be at least 80%
 report.ignore_errors = true
 report.omit = ["**/__init__.py", "**/types.py", "*_tab.py"]
 report.show_missing = true
