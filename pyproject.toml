@@ -57,9 +57,9 @@ style = [
   { include-group = "pylint" },
   #  { include-group = "mypy" },
   #  { include-group = "pyright" },
-  "pre-commit>=4.5.1",
+  "pre-commit>=4.6.0",
   "ruff>=0.15.11",
-  "ty>=0.0.31",
+  "ty>=0.0.32",
 ]
 pylint = ["pylint", "pylint-per-file-ignores"]
 test = [
