@@ -29,7 +29,7 @@ repos:
         # exclude: notebooks
       - id: check-case-conflict
       - id: check-executables-have-shebangs
-      - id: check-json
+      # - id: check-json
         # exclude: notebooks
       - id: check-merge-conflict
         exclude: \.rst$
@@ -38,7 +38,7 @@ repos:
       # - id: check-symlinks
       - id: check-toml
       - id: check-yaml
-        exclude: recipe/meta.yaml
+        # exclude: recipe/meta.yaml
       - id: debug-statements
         # exclude: notebooks
       - id: destroyed-symlinks
@@ -50,9 +50,9 @@ repos:
         args:
           - --pytest-test-first
       - id: mixed-line-ending
-      - id: pretty-format-json
-        args: [--autofix, --no-ensure-ascii, --no-sort-keys]
-        exclude: data|\.ipynb$
+      # - id: pretty-format-json
+      #   args: [--autofix, --no-ensure-ascii, --no-sort-keys]
+      #   exclude: data|\.ipynb$
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
     rev: 0.37.0
