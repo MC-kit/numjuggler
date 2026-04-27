@@ -4,7 +4,7 @@ from pathlib import Path
 import shutil
 
 import pytest
-import six
+
 from numjuggler.main import main
 
 HERE = Path(__file__).parent
@@ -15,12 +15,8 @@ assert test_data_path.exists(), "Cannot access test data files"
 def load_line_heading_numbers(lines):
     res = []
     for line in lines:
-        line = six.ensure_str(line, encoding="utf8")
         if line and str.isdigit(line[0]):
-            if six.PY2:
-                card_no = int(line.split()[0])
-            else:
-                card_no = int(line.split(maxsplit=2)[0])
+            card_no = int(line.split(maxsplit=2)[0])
             res.append(card_no)
     return res
 
