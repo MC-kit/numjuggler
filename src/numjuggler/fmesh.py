@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 Analyse fmesh cards.
 """
