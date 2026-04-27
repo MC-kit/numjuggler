@@ -1,12 +1,14 @@
 # Examples: msgspec
-
 # Disable showing recipe lines before execution.
-set quiet
+
+set quiet := true
 
 # Enable unstable features.
-set unstable
+
+set unstable := true
 
 # Configure the shell for Windows.
+
 set windows-shell := ["pwsh.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command"]
 
 # We don't want to install any dev dependencies by default.
@@ -14,14 +16,18 @@ set windows-shell := ["pwsh.exe", "-NoProfile", "-NonInteractive", "-ExecutionPo
 
 alias t := test
 alias c := check
-set dotenv-load
+
+set dotenv-load := true
 
 default_python := "3.13"
-# TITLE := `uv version`
-TITLE := `uv run --with setuptools_scm python -m setuptools_scm`
-# VERSION := `uv version --short`
-log := "warn"
 
+# TITLE := `uv version`
+
+TITLE := `uv run --with setuptools_scm python -m setuptools_scm`
+
+# VERSION := `uv version --short`
+
+log := "warn"
 export JUST_LOG := log
 
 @_default:
@@ -62,6 +68,7 @@ export JUST_LOG := log
         "_build"
         "build"
         "dist"
+        "docs/_build"
         "htmlcov"
     )
     for d in "${dirs_to_clean[@]}"; do
@@ -70,8 +77,7 @@ export JUST_LOG := log
     done
     coverage erase
     #pyreverse files
-    find . -type f -name "classes_numjuggler.*" -delete
-    find . -type f -name "packages_numjuggler.*" -delete
+    find . -type f -name "*.puml" -delete
 
 # install package
 [group('dev')]
@@ -89,7 +95,6 @@ export JUST_LOG := log
 # Check style includeing mypy and pylint and test
 # [group: 'dev']
 # @check-full: check mypy pylint pyright
-
 # # Bump project version
 # [group: 'dev']
 # @bump *args="patch":
@@ -141,9 +146,9 @@ export JUST_LOG := log
     uv run --no-dev --group test pytest {{ args }}
 
 # run documentation tests
-[group: 'test']
+[group('test')]
 @xdoctest *args:
-  uv run --no-dev --group test xdoctest --silent -c all src/numjuggler tools {{args}}
+    uv run --no-dev --group test xdoctest --silent -c all src/numjuggler tools {{ args }}
 
 # create coverage data
 [group('test')]
@@ -205,6 +210,7 @@ export JUST_LOG := log
 # @rstcheck:
 #   uv run --no-dev --group docs rstcheck --recursive *.rst docs
 #
+
 # build documentation
 [group('docs')]
 @docs-build *args:
