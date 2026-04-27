@@ -55,6 +55,3 @@ different renaming rules for different cells or cell ranges. For example:
     >numjuggler --map map.txt input.orig > input.new
     
 where `map.txt` is a text file, which format is described in details here: [map file format](map.md). 
-
-
-

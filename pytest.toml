@@ -25,7 +25,7 @@ addopts = [
     "--strict-markers",
     "--ignore=setup.py",
     "--failed-first",
-    "--xdoctest"
+    "--xdoctest",
 ]
 doctest_optionflags = [
   "ELLIPSIS",

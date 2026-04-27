@@ -178,4 +178,3 @@ cells and surfaces in C-lite takes 5 -- 10 min.
 - [x] How to ensure that the version is updated each time a modification is introduced?
 
     - [x] Check the use of ``git tag`` and ``git describe``
-

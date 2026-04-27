@@ -31,6 +31,3 @@ the resulting file and original one, in order to simplify visual comparison::
   > numjuggler --mode rems i1 > c1   # remove extra spaces from original input
   > numjuggler --mode rems i3 > c3   # and from result of reverse renumbering
   > vimdiff c1 c3                      # compare files visually
-
-
-

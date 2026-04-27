@@ -47,4 +47,3 @@ UPD:
 
 In the current inmplementation, I still use ``--``, which is simpler than the MCNP I-notation (no need to specify number of
 inserted elements). Now one can mix separate values and ranges on the same line.
-

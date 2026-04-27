@@ -64,5 +64,3 @@ and can be used as a template for the mapping file.
 Only lines beginning with `c`, `s`, `u` or `m` and having the semicolon `:` are
 taken into account; all other lines are ignored. After the semicolon, only one
 entry is taken into account.
-
-

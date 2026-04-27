@@ -1,4 +1,14 @@
+# .readthedocs.yml
+# Read the Docs configuration file
+# See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
+version: 2
+
 mkdocs:
     configuration: mkdocs.yml 
-python:
-  version: 2.7
+
+build:
+  os: ubuntu-lts-latest
+  commands:
+    - curl -LsSf https://astral.sh/uv/install.sh | sh
+    # uv is installed in "/home/docs/.local/bin"
+    - /home/docs/.local/bin/uv run --no-dev --group docs mkdocs build  --theme readthedocs -d $READTHEDOCS_OUTPUT/html

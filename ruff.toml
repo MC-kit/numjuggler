@@ -24,6 +24,7 @@ exclude = [
   "adhoc",
   "build",
   "data",
+  "dev_tests",
   "dist",
   "docs/source/conf.py",
   "node_modules",

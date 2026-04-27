@@ -16,4 +16,3 @@ Note: this mode only places content of two input files in proper order, i.e.
 cells, surfaces and data cards to the respective blocks. The cell, surface and
 other numbers are not changed. To ensure that the models to be merged have
 unique names for cell, surfaces, etc., they should be modified before merging. 
-

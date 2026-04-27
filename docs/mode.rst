@@ -293,6 +293,3 @@ annotate:
 
 getc:
     Extract comments taking more than 10 (or given by -c option) lines.
-
-
-

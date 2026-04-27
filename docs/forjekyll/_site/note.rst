@@ -50,4 +50,3 @@ there was the default mode, assumed if no ``--mode`` was given. This behaviour
 should be preserved and one should understand how to distinguish between
 the actual execution and asking for help. In the above examples, the command
 line arguments always start with the ``-h`` or ``--help`` flag. 
-

@@ -1,21 +1,20 @@
 [build-system]
-requires = ['setuptools>=42', 'wheel', 'setuptools_scm[toml]>=3.4']
+requires = [ "setuptools>=42", "setuptools-scm[toml]>=3.4", "wheel" ]
 
 [project]
 name = "numjuggler"
-dynamic = ["version"]
 description = "MCNP input file renumbering tool"
 readme = "README.md"
-keywords = ["MCNP", "ITER", "PARSER", "RENUMBER"]
+keywords = [ "ITER", "MCNP", "PARSER", "RENUMBER" ]
 license = "GPL-3.0-or-later"
-authors = [{ name = "A.Travleev", email = "anton.travleev@gmail.com" }]
+authors = [ { name = "A.Travleev", email = "anton.travleev@gmail.com" } ]
 requires-python = ">=3.11"
 classifiers = [
   "Development Status :: 4 - Beta",
   "Environment :: Console",
   "Intended Audience :: Developers",
-  "Intended Audience :: Science/Research",
   "Intended Audience :: Eduation",
+  "Intended Audience :: Science/Research",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.11",
@@ -25,19 +24,14 @@ classifiers = [
   "Topic :: Scientific/Engineering :: Physics",
   "Topic :: Utilities",
 ]
+dynamic = [ "version" ]
+optional-dependencies.nogq = [ "numpy>=2.4.4" ]
 urls."Bug Tracker" = "https://github.com/travleev/numjuggler/issues"
 urls.Changelog = "https://github.com/travleev/numjuggler/releases"
 urls.documentation = "https://numjuggler.readthedocs.io/"
 urls.homepage = "https://github.com/travleev/numjuggler/"
 urls.repository = "https://github.com/travleev/numjuggler/"
-[tool.setuptools_scm]
-write_to = "src/numjuggler/version.py"
-
-[project.optional-dependencies]
-nogq = ["numpy>=2.4.4"]
-
-[project.scripts]
-numjuggler = "numjuggler.main:main"
+scripts.numjuggler = "numjuggler.main:main"
 
 [dependency-groups]
 dev = [
@@ -45,37 +39,40 @@ dev = [
   { include-group = "style" },
   { include-group = "test" },
 ]
+test = [
+  "pygments>=2.20",
+  "pytest>=9.0.3",
+  "pytest-cov>=7.1",
+  "pytest-mock>=3.15.1",
+  "xdoctest>=1.3.2",
+]
 docs = [
+  "griffe-public-wildcard-imports",
   "mkdocs",
   "mkdocs-include-markdown-plugin",
   "mkdocs-material",
   "mkdocstrings[python]>=0.29",
   "pygments",
-  "griffe-public-wildcard-imports",
 ]
+pylint = [ "pylint", "pylint-per-file-ignores" ]
 style = [
-  { include-group = "pylint" },
-  #  { include-group = "mypy" },
+  # { include-group = "mypy" },
   #  { include-group = "pyright" },
-  "pre-commit>=4.6.0",
+  "pre-commit>=4.6",
   "ruff>=0.15.11",
   "ty>=0.0.32",
+  { include-group = "pylint" },
 ]
-pylint = ["pylint", "pylint-per-file-ignores"]
-test = [
-  "pygments>=2.20.0",
-  "pytest>=9.0.3",
-  "pytest-cov>=7.1.0",
-  "pytest-mock>=3.15.1",
-  "xdoctest>=1.3.2",
-]
+
+[tool.setuptools_scm]
+write_to = "src/numjuggler/version.py"
 
 [tool.coverage]
 run.branch = true
-run.omit = ["__main__.py", "**/__init__.py", "*_tab.py", "tools/*.py"]
+run.omit = [ "**/__init__.py", "*_tab.py", "__main__.py", "tools/*.py" ]
 run.parallel = true
-run.source = ["src"]
-paths.source = ["src"]
+run.source = [ "src" ]
+paths.source = [ "src" ]
 # Regexes for lines to exclude from consideration
 report.exclude_lines = [
   # Don't complain about missing debug-only code:
@@ -88,12 +85,41 @@ report.exclude_lines = [
   "raise AssertionError",
   "raise NotImplementedError",
 ]
-# Don't complain if non-runnable code isn't run:
-# Have to re-enable the standard pragma
-# Don't complain if tests don't hit defensive assertion code:
-report.fail_under = 30                                      # TODO @dvp: should be at least 80%
+report.fail_under = 39  # TODO @dvp: should be at least 80%
 report.ignore_errors = true
-report.omit = ["**/__init__.py", "**/types.py", "*_tab.py"]
+report.omit = [ "**/__init__.py", "**/types.py", "*_tab.py" ]
 report.show_missing = true
 report.skip_covered = true
 report.sort = "Cover"
+
+# MyPy config
+# See https://mypy.readthedocs.io/en/stable/config_file.html#using-a-pyproject-toml-file
+#     https://dev.to/tusharsadhwani/the-comprehensive-guide-to-mypy-561m
+
+[tool.mypy]
+python_version = "3.13"
+cache_dir = ".cache/mypy"
+files = "src/**/*.py"
+follow_imports = "silent"
+pretty = true
+strict = true
+warn_unused_configs = true
+overrides = [ { module = [ "tomllib" ], allow_redefinition = true, disable_error_code = "no-redef" } ]
+
+[tool.xdoctest]
+quiet = true
+options = ""
+
+[tool.jupytext]
+# https://jupytext.readthedocs.io/en/latest/config.html
+# Pair ipynb notebooks to py:percent text notebooks
+formats = "ipynb,py:percent"
+
+[tool.creosote]
+paths = [ "src" ]
+deps-file = "pyproject.toml"
+sections = [ "project.dependencies" ]
+
+[tool.rstcheck]
+report_level = "ERROR"
+ignore_messages = '(Unknown directive type "(todo.*|automodule)".$)'
